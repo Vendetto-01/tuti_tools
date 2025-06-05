@@ -16,6 +16,9 @@ const HomePage = () => (
       {/* Navigation link removed from header */}
     </header>
     <main className="App-main">
+      <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+        <img src="/tut.png" alt="Tuti Character" style={{ maxHeight: '150px', borderRadius: '10px' }} />
+      </div>
       <h1>Welcome to Tuti Tools</h1>
       <p>
         Primary functionalities (Upload, Rename, Convert/Manage) are consolidated
