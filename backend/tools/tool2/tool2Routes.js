@@ -10,14 +10,17 @@ module.exports = function(uploadedWavFiles) {
   // GET route to list uploaded WAV files available for renaming
   // These are files typically in 'uploaded' status from Tool 1
   router.get('/list-original-wavs', (req, res) => {
-    const filesToRename = uploadedWavFiles.filter(f => f.status === 'uploaded' && !f.originalName.endsWith('a.wav')); // Filter out already renamed ones if any
+    const filesToRename = uploadedWavFiles.filter(f => f.status === 'uploaded'); // Simplified filter
     res.json(filesToRename.map(f => ({
       id: f.id,
-      originalName: f.originalName,
+      originalName: f.trueOriginalName || f.originalName, // Prefer trueOriginalName for display
       serverFileName: f.serverFileName,
       size: f.size,
       uploadTimestamp: f.uploadTimestamp,
-      status: f.status
+      status: f.status,
+      // Optionally, include trueOriginalName explicitly if needed by frontend,
+      // but mapping it to originalName here simplifies if frontend expects 'originalName'
+      trueOriginalName: f.trueOriginalName
     })));
   });
 
@@ -40,33 +43,46 @@ module.exports = function(uploadedWavFiles) {
     const oldServerFileName = fileData.serverFileName;
 
     const dirName = path.dirname(oldServerPath);
-    const ext = path.extname(oldServerFileName);
-    const baseNameWithoutExt = path.basename(oldServerFileName, ext);
+    const currentServerExt = path.extname(oldServerFileName); // Extension of the actual file on disk (e.g., .m4a)
 
-    // New renaming logic: remove hyphen and subsequent characters from base name
-    let newBaseNameFromRule = baseNameWithoutExt;
-    const hyphenIndex = baseNameWithoutExt.indexOf('-');
+    // Determine the target base name by applying the hyphen rule to fileData.trueOriginalName (or fallback to originalName)
+    const nameToProcess = fileData.trueOriginalName || fileData.originalName;
+    if (!nameToProcess) {
+        // This case should ideally not happen if Tool1 always provides at least originalName
+        console.error(`File ID ${fileData.id} is missing 'trueOriginalName' and 'originalName'.`);
+        return res.status(400).json({ error: "File name information is missing to process rename." });
+    }
+    const originalFileOriginalExt = path.extname(nameToProcess);
+    const originalBaseName = path.basename(nameToProcess, originalFileOriginalExt);
+
+    let targetBaseName = originalBaseName; // Initialize with the full base name from (true)originalName
+    const hyphenIndex = originalBaseName.indexOf('-');
 
     if (hyphenIndex !== -1) {
-        newBaseNameFromRule = baseNameWithoutExt.substring(0, hyphenIndex);
+        targetBaseName = originalBaseName.substring(0, hyphenIndex); // e.g., "audioSüleymanÖzcan21973377903"
     }
 
-    // If the derived base name is the same as the original, no actual rename is needed.
-    // This handles cases where no hyphen is found, or the name already conforms to the target pattern.
-    if (newBaseNameFromRule === baseNameWithoutExt) {
+    // Construct the full new target server filename using the derived targetBaseName and the actual currentServerExt
+    const newTargetServerFileName = `${targetBaseName}${currentServerExt}`; // e.g., "audioSüleymanÖzcan21973377903.m4a"
+
+    // If the newly constructed target server filename is identical to the current server filename,
+    // then no physical rename operation is needed.
+    if (newTargetServerFileName === oldServerFileName) {
       return res.status(200).json({
-        message: `File '${oldServerFileName}' does not require renaming based on the new rule (no hyphen found or name already conforms).`,
+        message: `File '${oldServerFileName}' already matches the target naming convention derived from '${nameToProcess}'. No rename performed.`,
         updatedFile: {
           id: fileData.id,
+          trueOriginalName: fileData.trueOriginalName,
           originalName: fileData.originalName,
           serverFileName: fileData.serverFileName,
-          status: fileData.status // Status remains 'uploaded', no rename occurred
+          status: fileData.status,
+          renamedTimestamp: fileData.renamedTimestamp
         }
       });
     }
 
-    // Proceed with rename using the new base name
-    const newServerFileName = `${newBaseNameFromRule}${ext}`;
+    // Proceed with rename using the new target server filename
+    const newServerFileName = newTargetServerFileName;
     const newServerPath = path.join(dirName, newServerFileName);
 
     // Check if a file with the new name already exists (optional, but good practice)
@@ -106,8 +122,9 @@ module.exports = function(uploadedWavFiles) {
         message: `File '${oldServerFileName}' successfully renamed to '${newServerFileName}'.`,
         updatedFile: {
           id: fileData.id,
-          originalName: fileData.originalName,
-          serverFileName: fileData.serverFileName,
+          trueOriginalName: fileData.trueOriginalName, // The actual original name
+          originalName: fileData.originalName, // The name Tool1 might have initially set
+          serverFileName: fileData.serverFileName, // The new name on disk
           status: fileData.status,
           renamedTimestamp: fileData.renamedTimestamp
         }
