@@ -284,6 +284,79 @@ const Tool1Page = () => {
     }
   };
 
+  const handleDownloadSelectedM4As = () => {
+    if (selectedFileIdsForConversion.size === 0) {
+      setConvertUserMessage("Please select files to download.");
+      return;
+    }
+    let downloadedCount = 0;
+    selectedFileIdsForConversion.forEach(fileId => {
+      const fileToDownload = filesForConversion.find(f => f.id === fileId);
+      if (fileToDownload && fileToDownload.m4aDownloadUrl) {
+        // Create a temporary link and click it to trigger download
+        const link = document.createElement('a');
+        link.href = fileToDownload.m4aDownloadUrl;
+        // Extract filename from URL or use a default
+        const filename = fileToDownload.m4aConvertedFileName || fileToDownload.serverFileName.replace(/\.[^/.]+$/, "") + ".m4a";
+        link.setAttribute('download', filename);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        downloadedCount++;
+      }
+    });
+    if (downloadedCount > 0) {
+      setConvertUserMessage(`${downloadedCount} M4A file(s) download initiated.`);
+    } else {
+      setConvertUserMessage("No selected files have downloadable M4A versions.");
+    }
+  };
+
+  const handleDeleteSelectedFiles = async () => {
+    if (selectedFileIdsForConversion.size === 0) {
+      setConvertUserMessage("Please select files to delete.");
+      return;
+    }
+    // eslint-disable-next-line no-restricted-globals
+    if (!confirm(`Are you sure you want to delete ${selectedFileIdsForConversion.size} selected file(s) and their M4A versions?`)) {
+        return;
+    }
+
+    setIsConvertLoading(true); // Reuse loading state
+    setConvertFetchError('');
+    let successCount = 0;
+    let errorCount = 0;
+    const totalToProcess = selectedFileIdsForConversion.size;
+    setConvertUserMessage(`Starting batch delete for ${totalToProcess} file(s)...`);
+
+    for (const fileId of selectedFileIdsForConversion) {
+      const fileToDelete = filesForConversion.find(f => f.id === fileId);
+      if (!fileToDelete) continue;
+      try {
+        setConvertUserMessage(`Deleting ${fileToDelete.serverFileName || fileToDelete.originalName} (${successCount + errorCount + 1}/${totalToProcess})...`);
+        const apiUrl = process.env.REACT_APP_API_URL || '';
+        const response = await fetch(`${apiUrl}/api/tool3/delete-file/${fileId}`, {
+          method: 'DELETE',
+        });
+        if (response.ok) {
+          successCount++;
+        } else {
+          const errorData = await response.json();
+          errorCount++;
+          console.error(`Failed to delete ${fileToDelete.serverFileName}: ${errorData.error}`);
+        }
+      } catch (err) {
+        errorCount++;
+        console.error(`Error deleting ${fileToDelete.serverFileName}:`, err);
+      }
+    }
+    setConvertUserMessage(`Batch delete complete. Success: ${successCount}, Failed: ${errorCount}.`);
+    fetchFilesForConversion(); // Refresh this list
+    fetchFilesForRename();    // Refresh rename list as well
+    setSelectedFileIdsForConversion(new Set()); // Clear selection
+    setIsConvertLoading(false);
+  };
+
   const handleDeleteConvertedFile = async (fileId, fileName) => {
     // eslint-disable-next-line no-restricted-globals
     if (!confirm(`Are you sure you want to delete "${fileName}"? This removes the WAV and any M4A version.`)) {
@@ -473,10 +546,22 @@ const Tool1Page = () => {
                   >
                     Convert Selected ({selectedFileIdsForConversion.size})
                   </button>
-                  {/* Future: Add Batch Delete Button if needed */}
-                  {/* <button onClick={handleDeleteSelectedFiles} disabled={isConvertLoading || selectedFileIdsForConversion.size === 0} className="batch-delete-button">
+                  <button
+                    onClick={handleDownloadSelectedM4As}
+                    disabled={isConvertLoading || selectedFileIdsForConversion.size === 0}
+                    className="batch-download-button"
+                    style={{ marginRight: '10px' }}
+                  >
+                    Download Selected M4As ({selectedFileIdsForConversion.size})
+                  </button>
+                  <button
+                    onClick={handleDeleteSelectedFiles}
+                    disabled={isConvertLoading || selectedFileIdsForConversion.size === 0}
+                    className="batch-delete-button"
+                    style={{ backgroundColor: '#ef5350', color: 'white' }} // Destructive action style
+                  >
                     Delete Selected ({selectedFileIdsForConversion.size})
-                  </button> */}
+                  </button>
                 </div>
                 <ul>
                   {filesForConversion.map(file => (
