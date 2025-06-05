@@ -1,6 +1,29 @@
 const express = require('express');
+const ffmpeg = require('fluent-ffmpeg');
 const path = require('path');
 const fs = require('fs');
+
+// This module exports a function that takes uploadedWavFiles as an argument
+module.exports = function(uploadedWavFiles) {
+  const router = express.Router();
+
+  // Ensure FFmpeg path is set to the locally downloaded binaries
+  const ffmpegPath = path.join(__dirname, '../../bin/ffmpeg');
+  const ffprobePath = path.join(__dirname, '../../bin/ffprobe');
+
+  if (fs.existsSync(ffmpegPath)) {
+    ffmpeg.setFfmpegPath(ffmpegPath);
+    console.log(`FFmpeg binary found at: ${ffmpegPath}`);
+  } else {
+    console.warn(`FFmpeg binary not found at ${ffmpegPath} (Tool3 - formerly Tool2). Conversion might fail if not in system PATH.`);
+  }
+
+  if (fs.existsSync(ffprobePath)) {
+    ffmpeg.setFfprobePath(ffprobePath);
+    console.log(`FFprobe binary found at: ${ffprobePath}`);
+  } else {
+    console.warn(`ffprobe binary not found at ${ffprobePath} (Tool3 - formerly Tool2). Some operations might fail if not in system PATH.`);
+  }
 
 const sanitizeFilename = (name) => {
   if (typeof name !== 'string') return 'output_default'; // Return a default if name is not a string
@@ -27,114 +50,227 @@ const sanitizeFilename = (name) => {
   return sanitized;
 };
 
-// This module exports a function that takes uploadedWavFiles as an argument
-module.exports = function(uploadedWavFiles) {
-  const router = express.Router();
-
-  // GET route to list successfully converted files
-  router.get('/list-converted-files', (req, res) => {
-    const convertedFiles = uploadedWavFiles.filter(f => f.status === 'converted');
-    res.json(convertedFiles.map(f => ({
+  // GET route to list uploaded WAV files (this will be adapted to list RENAMED files)
+  router.get('/list-renamed-wavs', (req, res) => { // Endpoint name changed
+    // Filter for files that have been specifically renamed by Tool 2,
+    // or files that were renamed and then subsequently converted by this tool (Tool 3).
+    const filesToList = uploadedWavFiles.filter(f => f.status === 'renamed' || f.m4aConvertedFileName); // Shows renamed files, and those renamed then converted by Tool3
+    res.json(filesToList.map(f => ({
       id: f.id,
       originalName: f.originalName,
-      convertedFileName: f.convertedFileName,
-      downloadUrl: f.downloadUrl, // This is already the API path for download from Tool2
+      serverFileName: f.serverFileName,
+      size: f.size,
       uploadTimestamp: f.uploadTimestamp,
-      // We might add a conversionTimestamp later if needed
+      status: f.status, // Current status (could be 'renamed', or some 'converted' status if M4A conversion happened here)
+      renamedTimestamp: f.renamedTimestamp,
+      m4aConvertedFileName: f.m4aConvertedFileName, // If converted by this tool
+      m4aDownloadUrl: f.m4aDownloadUrl // If converted by this tool
     })));
   });
 
-  // POST route for "smart renaming" a file
-  router.post('/smart-rename/:fileId', (req, res) => {
-    const { fileId } = req.params;
-    const fileIndex = uploadedWavFiles.findIndex(f => f.id === fileId && f.status === 'converted');
+  // POST route for converting selected files (This might be removed or adapted for Tool 3 if needed)
+  // For now, we keep it but it might not be directly used by the new Tool 3 frontend
+  router.post('/convert-selected-to-m4a', async (req, res) => {
+    const { fileIds } = req.body;
 
-    if (fileIndex === -1) {
-      return res.status(404).json({ error: 'Converted file not found or not in correct state.' });
+    if (!fileIds || !Array.isArray(fileIds) || fileIds.length === 0) {
+      return res.status(400).json({ error: 'No file IDs provided for conversion.' });
     }
 
-    const fileData = uploadedWavFiles[fileIndex];
-    const currentConvertedName = fileData.convertedFileName;
-    const currentConvertedPath = fileData.convertedFilePath;
+    const conversionResults = [];
+    const conversionPromises = [];
 
-    if (!currentConvertedName || !currentConvertedPath) {
-      return res.status(400).json({ error: 'File data is incomplete for renaming.' });
-    }
+    for (const id of fileIds) {
+      // We need to find files that could be original or already renamed
+      const fileData = uploadedWavFiles.find(f => f.id === id && (f.status === 'uploaded' || f.status === 'renamed'));
 
-    const parts = path.parse(currentConvertedName);
-    const nameWithoutExt = parts.name;
-    const extension = parts.ext; // e.g., ".m4a"
+      if (!fileData) {
+        conversionResults.push({
+          id: id,
+          originalName: `Unknown (ID: ${id})`,
+          status: 'error',
+          error: 'File not found, already processed, or not in a convertible state.'
+        });
+        continue;
+      }
 
-    const lastDashIndex = nameWithoutExt.lastIndexOf('-');
-    let newNameWithoutExt = nameWithoutExt;
+      const inputFile = fileData.serverPath; // This should be the path to the (potentially renamed) WAV
+      // The base name for the output M4A should be derived from the *current* serverFileName
+      const originalBaseName = path.parse(fileData.serverFileName).name;
+      const sanitizedBaseName = sanitizeFilename(originalBaseName);
+      const outputFileName = `${sanitizedBaseName}.m4a`;
+      
+      const outputPath = path.resolve(__dirname, '../../converted/tool3_m4a'); // Changed path
+      const outputFile = path.resolve(outputPath, outputFileName);
 
-    if (lastDashIndex !== -1) {
-      // Check if the part after the last dash is purely numeric (or some other pattern you expect for "generated" parts)
-      // For simplicity, we'll just truncate if a dash exists.
-      // A more robust solution might check if `nameWithoutExt.substring(lastDashIndex + 1)` is numeric.
-      newNameWithoutExt = nameWithoutExt.substring(0, lastDashIndex);
-    }
-    
-    // If truncation results in an empty name, or no change, handle appropriately
-    if (!newNameWithoutExt || newNameWithoutExt === nameWithoutExt) {
-        return res.status(400).json({ error: 'No change in filename based on smart rename logic or name would be empty.' });
-    }
-    
-    const sanitizedNewNameWithoutExt = sanitizeFilename(newNameWithoutExt);
-
-    // If sanitization results in an empty name, or no change where one was expected, handle appropriately
-    if (!sanitizedNewNameWithoutExt || (newNameWithoutExt !== nameWithoutExt && sanitizedNewNameWithoutExt === nameWithoutExt) ) {
-        // If original was not changed by smart logic, but sanitization made it same as original, it's fine.
-        // But if smart logic DID change it, and THEN sanitization made it empty or reverted it, that's an issue.
-        // The check `newNameWithoutExt !== nameWithoutExt` ensures we only error if smart logic *intended* a change.
-        if (newNameWithoutExt !== nameWithoutExt && (sanitizedNewNameWithoutExt === '' || sanitizedNewNameWithoutExt === nameWithoutExt)) {
-             return res.status(400).json({ error: 'Filename becomes invalid or unchanged after sanitization during smart rename.' });
-        }
-    }
-    // Ensure the name is not empty after sanitization if it was supposed to be changed
-    if (newNameWithoutExt !== nameWithoutExt && !sanitizedNewNameWithoutExt) {
-        return res.status(400).json({ error: 'Filename becomes empty after sanitization during smart rename.' });
-    }
-
-
-    const newConvertedName = `${sanitizedNewNameWithoutExt || nameWithoutExt}${extension}`; // Fallback to original name if sanitized is empty
-    const newConvertedPath = path.join(path.dirname(currentConvertedPath), newConvertedName);
-
-    if (fs.existsSync(newConvertedPath)) {
-      return res.status(409).json({ error: `A file named ${newConvertedName} already exists. Cannot rename.` });
-    }
-
-    try {
-      fs.renameSync(currentConvertedPath, newConvertedPath);
-      console.log(`Renamed file from ${currentConvertedPath} to ${newConvertedPath}`);
-
-      // Update in-memory store
-      fileData.convertedFileName = newConvertedName;
-      fileData.convertedFilePath = newConvertedPath;
-      // Update download URL (assuming Tool2's download route can handle the new name)
-      fileData.downloadUrl = `/api/tool2/download/${newConvertedName}`;
-      // Add a timestamp for the rename action
-      fileData.lastRenamedTimestamp = new Date().toISOString();
-
-
-      res.json({
-        message: `File successfully renamed to ${newConvertedName}`,
-        updatedFile: {
+      try {
+        fs.mkdirSync(outputPath, { recursive: true });
+        console.log(`Output directory ensured for Tool 3: ${outputPath}`);
+      } catch (error) {
+        console.error('Error creating output directory (Tool 3):', error);
+        conversionResults.push({
           id: fileData.id,
           originalName: fileData.originalName,
-          convertedFileName: fileData.convertedFileName,
-          downloadUrl: fileData.downloadUrl
+          status: 'error',
+          error: 'Failed to create output directory',
+          details: error.message
+        });
+        continue;
+      }
+
+      const promise = new Promise((resolve) => {
+        console.log(`Starting M4A conversion for (Tool3): ${fileData.originalName} (Server: ${fileData.serverFileName})`);
+        console.log(`Input file (Tool3): ${inputFile}`);
+        console.log(`Output file (Tool3): ${outputFile}`);
+        
+        if (!fs.existsSync(inputFile)) {
+          console.error(`Input file does not exist (Tool3): ${inputFile}`);
+          conversionResults.push({
+            id: fileData.id,
+            originalName: fileData.originalName,
+            status: 'error',
+            error: 'Input file not found for M4A conversion'
+          });
+          resolve();
+          return;
+        }
+
+        ffmpeg(inputFile)
+          .format('mp4')
+          .audioCodec('aac')
+          .audioBitrate('128k')
+          .audioChannels(2)
+          .audioFrequency(44100)
+          .outputOptions([
+            '-movflags', 'faststart',
+            '-f', 'mp4'
+          ])
+          .on('start', (commandLine) => {
+            console.log('FFmpeg command (Tool3): ' + commandLine);
+          })
+          .on('progress', (progress) => {
+            if (progress.percent) {
+              console.log(`Processing M4A (Tool3) ${fileData.originalName}: ${progress.percent.toFixed(2)}% done`);
+            }
+          })
+          .on('end', () => {
+            console.log(`M4A conversion finished for (Tool3): ${fileData.originalName}`);
+            
+            if (fs.existsSync(outputFile)) {
+              // Update fileData for M4A conversion
+              // Note: A file can be renamed AND then converted.
+              fileData.m4aConvertedFileName = outputFileName; // New field
+              fileData.m4aConvertedFilePath = outputFile;   // New field
+              fileData.m4aDownloadUrl = `/api/tool3/download/${outputFileName}`; // New field
+              fileData.m4aConversionError = null;         // New field
+              // We might need a new status like 'renamed_and_converted'
+              // For now, let's assume 'converted' implies it might have been renamed first.
+              // Or, we can add a specific status if needed.
+              // fileData.status = 'converted_m4a'; // Or similar
+
+              conversionResults.push({
+                id: fileData.id,
+                originalName: fileData.originalName, // Show original name for clarity
+                currentServerName: fileData.serverFileName, // Show current name
+                status: 'success',
+                message: 'File converted successfully to M4A!',
+                downloadUrl: fileData.m4aDownloadUrl
+              });
+            } else {
+              console.error(`Output M4A file was not created (Tool3): ${outputFile}`);
+              conversionResults.push({
+                id: fileData.id,
+                originalName: fileData.originalName,
+                status: 'error',
+                error: 'Output M4A file was not created'
+              });
+            }
+            resolve();
+          })
+          .on('error', (err) => {
+            console.error(`Error during M4A conversion for (Tool3) ${fileData.originalName}:`, err);
+            fileData.m4aConversionError = err.message;
+            conversionResults.push({
+              id: fileData.id,
+              originalName: fileData.originalName,
+              status: 'error',
+              error: 'Error during M4A file conversion.',
+              details: err.message
+            });
+            resolve();
+          })
+          .save(outputFile);
+      });
+      conversionPromises.push(promise);
+    }
+
+    await Promise.all(conversionPromises);
+    console.log('All selected M4A conversions attempted for Tool 3.');
+    res.json(conversionResults);
+  });
+
+  // GET route for downloading the converted M4A file (from Tool3)
+  router.get('/download/:filename', (req, res) => {
+    const filename = req.params.filename;
+    // Path now points to tool3_m4a directory
+    const filePath = path.resolve(__dirname, '../../converted/tool3_m4a', filename);
+
+    if (fs.existsSync(filePath)) {
+      res.setHeader('Content-Type', 'audio/mp4');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      
+      res.download(filePath, filename, (err) => {
+        if (err) {
+          console.error('Error downloading M4A file (Tool3):', err);
+          if (!res.headersSent) {
+            res.status(500).json({ error: 'Error downloading file' });
+          }
         }
       });
-    } catch (err) {
-      console.error(`Error renaming file ${currentConvertedName} to ${newConvertedName}:`, err);
-      res.status(500).json({ error: 'Failed to rename file on server.', details: err.message });
+    } else {
+      console.log(`M4A file not found at path (Tool3): ${filePath}`);
+      res.status(404).json({ error: 'M4A file not found (Tool3).' });
     }
   });
 
-  // Note: Download of converted files is still handled by Tool2's download route
-  // as it knows the correct path in `converted/tool2_m4a`.
-  // If Tool3 needed to initiate downloads directly, it would need access to that path logic.
+  // DELETE route for removing an uploaded WAV file (and its conversions)
+  // This needs to handle original, renamed, and M4A converted files
+  router.delete('/delete-file/:fileId', (req, res) => {
+    const { fileId } = req.params;
+    const fileIndex = uploadedWavFiles.findIndex(f => f.id === fileId);
+
+    if (fileIndex === -1) {
+      return res.status(404).json({ error: 'File not found in the list.' });
+    }
+
+    const fileData = uploadedWavFiles[fileIndex];
+    const originalNameForLog = fileData.originalName;
+
+    // Attempt to delete the original/renamed WAV file on server
+    if (fileData.serverPath && fs.existsSync(fileData.serverPath)) {
+      try {
+        fs.unlinkSync(fileData.serverPath);
+        console.log(`Deleted WAV file from server: ${fileData.serverPath}`);
+      } catch (err) {
+        console.error(`Error deleting WAV file ${fileData.serverPath}:`, err);
+      }
+    }
+
+    // Attempt to delete the M4A converted file if it exists
+    if (fileData.m4aConvertedFilePath && fs.existsSync(fileData.m4aConvertedFilePath)) {
+      try {
+        fs.unlinkSync(fileData.m4aConvertedFilePath);
+        console.log(`Deleted converted M4A file: ${fileData.m4aConvertedFilePath}`);
+      } catch (err) {
+        console.error(`Error deleting converted M4A file ${fileData.m4aConvertedFilePath}:`, err);
+      }
+    }
+
+    uploadedWavFiles.splice(fileIndex, 1);
+    console.log(`Removed file ID ${fileId} (${originalNameForLog}) from in-memory list. Remaining files:`, uploadedWavFiles.length);
+
+    res.json({ message: `File ${originalNameForLog} and its potential M4A conversion have been processed for deletion.` });
+  });
 
   return router;
 };

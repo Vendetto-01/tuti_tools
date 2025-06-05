@@ -1,7 +1,7 @@
 import './App.css';
 import Tool1 from './components/tools/Tool1/Tool1';
-import Tool2 from './components/tools/Tool2/Tool2';
-import Tool3 from './components/tools/Tool3/Tool3';
+import Tool3 from './components/tools/Tool3/Tool3'; // Will become the new Tool2 (Rename)
+import Tool2 from './components/tools/Tool2/Tool2'; // Will become the new Tool3 (Placeholder)
 import Tool4 from './components/tools/Tool4/Tool4';
 import Tool5 from './components/tools/Tool5/Tool5';
 
@@ -16,8 +16,8 @@ function App() {
         <p>Here are the tools currently available in this application:</p>
         <div className="tools-grid">
           <Tool1 />
-          <Tool2 />
           <Tool3 />
+          <Tool2 />
           <Tool4 />
           <Tool5 />
         </div>

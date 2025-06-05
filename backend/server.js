@@ -8,8 +8,8 @@ const cors = require('cors');
 const uploadedWavFiles = [];
 
 const tool1Routes = require('./tools/tool1/tool1Routes')(uploadedWavFiles); // Pass shared array
-const tool2Routes = require('./tools/tool2/tool2Routes')(uploadedWavFiles); // Pass shared array
-const tool3Routes = require('./tools/tool3/tool3Routes')(uploadedWavFiles); // Pass shared array for Tool3
+const tool2RenameRoutes = require('./tools/tool2/tool2Routes')(uploadedWavFiles); // Will be the new rename tool routes
+const tool3ListRenamedRoutes = require('./tools/tool3/tool3Routes')(uploadedWavFiles); // Existing tool2 (converter) will be adapted for tool3 (list renamed)
 
 const app = express();
 const port = process.env.PORT || 3001; // Backend server port
@@ -46,8 +46,8 @@ app.use((req, res, next) => {
 
 // API Routes (should come before static serving and catch-all)
 app.use('/api/tool1', tool1Routes); // Use Tool1 routes
-app.use('/api/tool2', tool2Routes); // Mount Tool2 routes
-app.use('/api/tool3', tool3Routes); // Mount Tool3 routes
+app.use('/api/tool2', tool2RenameRoutes); // Mount new Tool2 (Rename) routes
+app.use('/api/tool3', tool3ListRenamedRoutes); // Mount new Tool3 (List Renamed) routes
 
 // API endpoint example
 app.get('/api/hello', (req, res) => {

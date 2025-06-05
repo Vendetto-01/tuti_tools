@@ -1,128 +1,122 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import './Tool3.css';
+import './Tool2.css'; // CSS will be renamed to match new tool number
 
-function Tool3() {
-  const [convertedFiles, setConvertedFiles] = useState([]);
+function Tool3() { // This component will be rendered as Tool 2 due to App.js changes
+  const [originalWavs, setOriginalWavs] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [fetchError, setFetchError] = useState('');
-  const [message, setMessage] = useState('');
-  const [renamingFileId, setRenamingFileId] = useState(null);
+  const [renameMessage, setRenameMessage] = useState('');
 
-  const fetchConvertedFiles = useCallback(async () => {
+  const fetchOriginalWavs = useCallback(async () => {
     setIsLoading(true);
     setFetchError('');
-    setMessage('');
+    setRenameMessage('');
     try {
       const apiUrl = process.env.REACT_APP_API_URL || '';
-      const response = await fetch(`${apiUrl}/api/tool3/list-converted-files`);
+      // This component (Tool3.js) is now effectively Tool 2, so it calls /api/tool2
+      const response = await fetch(`${apiUrl}/api/tool2/list-original-wavs`);
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to fetch converted files.');
+        throw new Error(errorData.error || 'Failed to fetch original WAV files.');
       }
       const data = await response.json();
-      setConvertedFiles(data);
+      setOriginalWavs(data);
       if (data.length === 0) {
-        setMessage('No converted M4A files found. Please convert files using Tool 2 first.');
+        setRenameMessage('No WAV files found that are ready for renaming. Upload files via Tool 1.');
       } else {
-        setMessage('');
+        setRenameMessage('Select a file to rename (appends "a" to the filename).');
       }
     } catch (err) {
-      console.error('Error fetching converted M4A files:', err);
+      console.error('Error fetching original WAVs:', err);
       setFetchError(err.message);
+      setRenameMessage('');
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchConvertedFiles();
-  }, [fetchConvertedFiles]);
+    fetchOriginalWavs();
+  }, [fetchOriginalWavs]);
 
-  const handleSmartRename = async (fileId, originalName) => {
-    if (!window.confirm(`Are you sure you want to apply smart rename to "${originalName}"? This will remove timestamp/ID parts from the filename.`)) {
+  const handleRenameFile = async (fileId, currentName) => {
+    // eslint-disable-next-line no-restricted-globals
+    if (!confirm(`Are you sure you want to rename "${currentName}"?\nThis will append 'a' to its name on the server.`)) {
       return;
     }
 
-    setRenamingFileId(fileId);
+    setIsLoading(true);
     setFetchError('');
-    setMessage('');
-
+    setRenameMessage(`Renaming ${currentName}...`);
     try {
       const apiUrl = process.env.REACT_APP_API_URL || '';
-      const response = await fetch(`${apiUrl}/api/tool3/smart-rename/${fileId}`, {
+      const response = await fetch(`${apiUrl}/api/tool2/rename-wav/${fileId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-        }
+        },
       });
 
-      const data = await response.json();
+      const resultData = await response.json();
 
       if (response.ok) {
-        setMessage(`File successfully renamed to: ${data.updatedFile.convertedFileName}`);
-        // Refresh the file list to show updated names
-        await fetchConvertedFiles();
+        setRenameMessage(resultData.message || `File ${currentName} renamed successfully.`);
+        // Refresh the list to show updated names or remove renamed files from this list
+        fetchOriginalWavs();
       } else {
-        setFetchError(data.error || 'Failed to rename file.');
+        setFetchError(resultData.error || 'An unknown error occurred during renaming.');
+        setRenameMessage(`Failed to rename ${currentName}.`);
       }
     } catch (err) {
       console.error('Error renaming file:', err);
-      setFetchError('An error occurred while communicating with the server.');
+      setFetchError('An error occurred while communicating with the server for renaming.');
+      setRenameMessage(`Failed to rename ${currentName}.`);
     } finally {
-      setRenamingFileId(null);
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="tool-container tool3-manager">
-      <h2>Tool 3: Manage Converted M4A Files</h2>
+    <div className="tool-container tool3-rename-tool"> {/* Updated class for clarity */}
+      <h2>Tool 2: Rename Uploaded WAV Files</h2>
       <p className="tool-description">
-        View and rename your successfully converted M4A files. Use "Smart Rename" to clean up filenames by removing timestamps and IDs.
+        Files uploaded via Tool 1 that are eligible for renaming will appear here.
+        Renaming a file will append the letter 'a' to its current server filename.
       </p>
 
-      <button onClick={fetchConvertedFiles} disabled={isLoading} className="refresh-button">
-        {isLoading ? 'Refreshing...' : 'Refresh M4A File List'}
+      <button onClick={fetchOriginalWavs} disabled={isLoading} className="refresh-button">
+        {isLoading ? 'Refreshing...' : 'Refresh File List'}
       </button>
 
       {fetchError && <p className="status-message error">{fetchError}</p>}
-      {message && !fetchError && <p className="status-message info">{message}</p>}
       
-      {isLoading && convertedFiles.length === 0 && !fetchError && <p className="status-message loading">Loading converted M4A files...</p>}
+      {isLoading && originalWavs.length === 0 && !fetchError && <p className="status-message loading">Loading files for renaming...</p>}
 
-      {!isLoading && convertedFiles.length > 0 && (
-        <div className="converted-files-list">
-          <h3>Successfully Converted M4A Files:</h3>
+      {!isLoading && originalWavs.length > 0 && (
+        <div className="files-to-rename-list">
+          <h3>Available WAV Files for Renaming:</h3>
           <ul>
-            {convertedFiles.map(file => (
-              <li key={file.id} className="file-item-converted">
-                <div className="file-info">
-                  <span className="original-name">Original: {file.originalName}</span>
-                  <span className="converted-name">Converted: {file.convertedFileName}</span>
-                </div>
-                <div className="file-actions">
-                  <a 
-                    href={(file.downloadUrl && file.downloadUrl.startsWith('http')) ? file.downloadUrl : (process.env.REACT_APP_API_URL || '') + file.downloadUrl} 
-                    download 
-                    className="download-link-item"
-                  >
-                    Download M4A
-                  </a>
-                  <button
-                    onClick={() => handleSmartRename(file.id, file.convertedFileName)}
-                    className="rename-button"
-                    disabled={renamingFileId === file.id}
-                    title="Remove timestamp and ID parts from filename"
-                  >
-                    {renamingFileId === file.id ? 'Renaming...' : 'Smart Rename'}
-                  </button>
-                </div>
+            {originalWavs.map(file => (
+              <li key={file.id} className="file-item-actionable">
+                <span className="file-name-display">
+                  {file.originalName} (Server: {file.serverFileName}) - {((file.size || 0) / 1024 / 1024).toFixed(2)} MB
+                </span>
+                <button
+                  onClick={() => handleRenameFile(file.id, file.serverFileName)}
+                  className="rename-button"
+                  disabled={isLoading}
+                  title={`Rename ${file.serverFileName}`}
+                >
+                  Rename
+                </button>
               </li>
             ))}
           </ul>
         </div>
       )}
+      {renameMessage && <p className={`status-message ${fetchError ? 'error' : 'info'}`}>{renameMessage}</p>}
     </div>
   );
 }
 
-export default Tool3;
+export default Tool3; // Still exporting as Tool3, but App.js uses it as Tool 2
