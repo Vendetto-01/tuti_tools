@@ -2,36 +2,36 @@ import './App.css';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import Tool1Page from './pages/Tool1Page'; // Import the new consolidated page
 // We will keep Tool4 and Tool5 imports for now as they are placeholders
+import Tool2 from './components/tools/Tool2/Tool2'; // Now a placeholder
+import Tool3 from './components/tools/Tool3/Tool3'; // Now a placeholder
 import Tool4 from './components/tools/Tool4/Tool4';
 import Tool5 from './components/tools/Tool5/Tool5';
-// Tool1, Tool2, Tool3 components are no longer directly used in App.js for routing,
-// their functionality will be in Tool1Page.js or they become true placeholders.
+// Tool1 component is no longer directly used in App.js for routing,
+// its functionality will be in Tool1Page.js or it becomes true placeholders.
 
 const HomePage = () => (
   <div>
     <header className="App-header">
       <h1>Tuti Tools Dashboard</h1>
-      <nav>
-        <Link to="/tool1" className="tool-link-button">Access Tool Operations Hub</Link>
-        {/* Future links to other dedicated tool pages can go here */}
-      </nav>
+      {/* Navigation link removed from header */}
     </header>
     <main className="App-main">
       <h1>Welcome to Tuti Tools</h1>
       <p>
-        All primary functionalities (Upload, Rename, Convert/Manage) are now consolidated
-        into the "Tool Operations Hub". Click the link above to access it.
+        Primary functionalities (Upload, Rename, Convert/Manage) are consolidated
+        into "Tool 1". Click the link above to access it.
       </p>
       <p>
-        The sections below are placeholders for any future, distinct tools.
+        Other tools are available below:
       </p>
       <div className="tools-grid">
-        {/* These are now just placeholders or could be links to sections within Tool1Page if needed */}
-        <div className="tool-placeholder-card">
-          <h3>Tool Operations Hub</h3>
+        <div className="tool-placeholder-card"> {/* Card for Tool 1 link */}
+          <h3>Tool 1</h3>
           <p>Upload, Rename, Convert, and Manage files.</p>
-          <Link to="/tool1" className="tool-link-button-small">Go to Hub</Link>
+          <Link to="/tool1" className="tool-link-button-small">Go to Tool 1</Link>
         </div>
+        <Tool2 /> {/* Placeholder for future Tool 2 */}
+        <Tool3 /> {/* Placeholder for future Tool 3 */}
         <Tool4 /> {/* Tool4 remains a placeholder */}
         <Tool5 /> {/* Tool5 remains a placeholder */}
       </div>

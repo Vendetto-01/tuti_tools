@@ -3,79 +3,101 @@ body {
   font-family: 'Roboto', 'Helvetica Neue', Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #f4f7f6; /* Light grey background for the page */
-  color: #333;
+  background-color: #000000; /* Black background for the page */
+  color: #00ff00; /* Neon green text */
   line-height: 1.6;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+  background-color: #1a1a1a; /* Darker background for code blocks */
+  color: #00ff00; /* Neon green text for code */
+  padding: 2px 5px;
+  border-radius: 4px;
+  border: 1px solid #003300;
 }
 
 .App {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  /* Apply theme directly to App if global, or use .theme-tech-neon on specific pages */
+  /* background-color: #000000; */ /* Covered by body */
+  /* color: #00ff00; */ /* Covered by body */
 }
 
 .App-header {
-  background: linear-gradient(90deg, #4b6cb7 0%, #182848 100%); /* Gradient header */
+  background: #0a0a0a; /* Very dark, almost black */
   padding: 25px 20px;
-  color: white;
+  color: #00ff00; /* Neon green */
   text-align: center;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 5px rgba(0, 255, 0, 0.25); /* Neon green glow */
+  border-bottom: 1px solid #005000; /* Darker neon green border */
 }
 
 .App-header h1 {
   margin: 0;
-  font-size: 2.2rem;
-  font-weight: 500;
+  font-size: 2.3rem; /* Slightly larger */
+  font-weight: bold; /* Bolder */
+  text-shadow: 0 0 5px #00ff00, 0 0 10px #00ff00; /* Neon text glow */
 }
 
 .App-main {
   flex-grow: 1;
-  padding: 40px 20px; /* Increased padding */
-  max-width: 1200px; /* Max width for content */
-  margin: 0 auto; /* Center content */
+  padding: 30px 20px;
+  max-width: 1200px;
+  margin: 20px auto; /* Add some top/bottom margin for main content block */
   width: 100%;
   box-sizing: border-box;
+  background-color: rgba(0, 0, 0, 0.6); /* More transparent black for content background */
+  border: 1px solid #003300; /* Dark neon green border */
+  border-radius: 10px; /* Slightly more rounded */
+  box-shadow: 0 0 20px rgba(0, 255, 0, 0.15); /* Softer, wider glow */
 }
 
-.App-main > h1 { /* Targeting only the direct h1 child of App-main */
+.App-main > h1 {
   font-size: 2.5rem;
-  color: #2c3e50;
+  color: #00ff00; /* Neon green */
   text-align: center;
-  margin-bottom: 15px;
+  margin-bottom: 20px; /* Increased margin */
+  text-shadow: 0 0 4px #00ff00;
 }
 
-.App-main > p { /* Targeting only the direct p child of App-main */
+.App-main > p {
   font-size: 1.1rem;
-  color: #555;
+  color: #c0c0c0; /* Lighter grey for paragraph text */
   text-align: center;
-  margin-bottom: 40px;
-  max-width: 700px;
+  margin-bottom: 30px;
+  max-width: 750px; /* Slightly wider */
   margin-left: auto;
   margin-right: auto;
 }
 
 .App-footer {
-  background-color: #2c3e50; /* Darker footer */
+  background-color: #0a0a0a; /* Very dark */
   padding: 20px;
-  color: #ecf0f1;
+  color: #00dd00; /* Slightly less intense neon green for footer */
   text-align: center;
   font-size: 0.9rem;
+  border-top: 1px solid #005000; /* Darker neon green border */
+  text-shadow: 0 0 3px #00dd00;
 }
 
-/* Responsive adjustments */
+/* Responsive adjustments - Retain existing, ensure they don't clash badly with neon */
 @media (max-width: 768px) {
   .App-header h1 {
-    font-size: 1.8rem;
+    font-size: 1.9rem; /* Adjusted for neon */
   }
   .App-main {
-    padding: 30px 15px;
+    padding: 25px 15px;
   }
   .App-main > h1 {
-    font-size: 2rem;
+    font-size: 2.1rem;
   }
   .App-main > p {
     font-size: 1rem;
-    margin-bottom: 30px;
+    margin-bottom: 25px;
   }
 }
 
@@ -84,27 +106,283 @@ body {
     padding: 20px 15px;
   }
   .App-header h1 {
-    font-size: 1.6rem;
+    font-size: 1.7rem; /* Adjusted for neon */
   }
   .App-main {
     padding: 20px 10px;
   }
   .App-main > h1 {
-    font-size: 1.8rem;
+    font-size: 1.9rem;
   }
   .App-main > p {
-    font-size: 0.9rem;
+    font-size: 0.95rem; /* Slightly larger for readability */
     margin-bottom: 20px;
   }
   .App-footer {
     padding: 15px;
-    font-size: 0.8rem;
+    font-size: 0.85rem;
   }
 }
 
 .tools-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Slightly larger minmax */
-  gap: 30px; /* Increased gap */
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 25px;
   margin-top: 30px;
+}
+
+/* --- NEON THEME STYLES --- */
+
+/* General link style for neon theme */
+.theme-tech-neon a, a {
+  color: #00ff00;
+  text-decoration: none;
+  transition: color 0.2s ease, text-shadow 0.2s ease;
+}
+.theme-tech-neon a:hover, a:hover {
+  color: #33ff33; /* Brighter neon green on hover */
+  text-shadow: 0 0 8px #00ff00;
+}
+
+
+/* Tool Card Styling for Neon Theme */
+.tool-container, .tool-placeholder-card {
+  background-color: #0d0d0d; /* Very dark card background */
+  border: 1px solid #00ff00; /* Neon green border */
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 0 12px rgba(0, 255, 0, 0.3), inset 0 0 8px rgba(0, 255, 0, 0.15); /* Neon glow */
+  text-align: left;
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+  color: #cccccc; /* Light grey text for card content */
+}
+
+.tool-container:hover, .tool-placeholder-card:hover {
+  box-shadow: 0 0 25px rgba(0, 255, 0, 0.5), inset 0 0 15px rgba(0, 255, 0, 0.25);
+  transform: translateY(-3px); /* Subtle lift */
+}
+
+.tool-container h2, .tool-placeholder-card h3 {
+  margin-top: 0;
+  color: #00ff00; /* Neon green for headings */
+  border-bottom: 1px solid #008000; /* Darker green for subtle separation */
+  padding-bottom: 10px;
+  margin-bottom: 15px;
+  text-shadow: 0 0 5px #00ff00;
+  font-size: 1.5em; /* Adjusted size */
+}
+/* For Tool1Page specific section titles, if .theme-tech-neon is on its root */
+.theme-tech-neon .tool-section h2 {
+  color: #00ff00;
+  border-bottom: 2px solid #00ff00;
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+  text-shadow: 0 0 5px #00ff00, 0 0 10px #00ff00;
+  font-size: 1.8em;
+}
+
+
+.tool-description {
+  font-size: 1em; /* Slightly larger */
+  color: #b0b0b0; /* Lighter grey for descriptions */
+  margin-bottom: 20px; /* More space */
+  line-height: 1.7; /* More spacing */
+}
+
+/* Button Styles for Neon Theme */
+button, .file-input-label, .tool-link-button, .tool-link-button-small {
+  background-color: transparent; /* Transparent background */
+  color: #00ff00; /* Neon green text */
+  border: 2px solid #00ff00; /* Neon green border */
+  padding: 10px 18px; /* Slightly more padding */
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1em;
+  font-weight: bold;
+  transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, text-shadow 0.2s ease;
+  text-decoration: none;
+  display: inline-block;
+  margin-top: 10px;
+  text-shadow: 0 0 3px rgba(0, 255, 0, 0.7);
+  box-shadow: 0 0 5px rgba(0, 255, 0, 0.5), inset 0 0 3px rgba(0,255,0,0.3);
+}
+
+button:hover, .file-input-label:hover, .tool-link-button:hover, .tool-link-button-small:hover {
+  background-color: #00ff00; /* Neon green background on hover */
+  color: #000000; /* Black text on hover */
+  box-shadow: 0 0 15px #00ff00, 0 0 8px #00ff00 inset;
+  text-shadow: none;
+}
+
+button:disabled {
+  background-color: #1a1a1a;
+  color: #555555;
+  border-color: #333333;
+  cursor: not-allowed;
+  box-shadow: none;
+  text-shadow: none;
+}
+
+.file-input-label {
+  display: inline-block;
+  margin-bottom: 10px;
+}
+
+input[type="file"] {
+  display: none;
+}
+
+/* Status Messages for Neon Theme */
+.status-message {
+  margin-top: 15px;
+  padding: 12px; /* More padding */
+  border-radius: 4px;
+  font-weight: bold;
+  border: 1px solid;
+  background-color: rgba(0,0,0,0.3); /* Dark semi-transparent background */
+  text-shadow: 0 0 3px #000; /* Text shadow for readability */
+}
+
+.status-message.info {
+  border-color: #00ccff; /* Neon cyan for info */
+  color: #00ccff;
+  box-shadow: 0 0 5px rgba(0, 204, 255, 0.3);
+}
+
+.status-message.success {
+  border-color: #00ff00; /* Neon green for success */
+  color: #00ff00;
+  box-shadow: 0 0 5px rgba(0, 255, 0, 0.3);
+}
+
+.status-message.error {
+  border-color: #ff3333; /* Neon red for error */
+  color: #ff3333;
+  box-shadow: 0 0 5px rgba(255, 51, 51, 0.3);
+}
+
+.status-message.loading {
+  border-color: #ffff00; /* Neon yellow for loading */
+  color: #ffff00;
+  box-shadow: 0 0 5px rgba(255, 255, 0, 0.3);
+}
+
+/* List Styles for Neon Theme */
+.uploaded-files-summary ul, .files-to-rename-list ul, .uploaded-files-list ul, .results-list ul {
+  list-style-type: none;
+  padding-left: 0;
+}
+
+.uploaded-files-summary li, .files-to-rename-list li, .uploaded-files-list li, .results-list li {
+  background-color: #101010; /* Very dark list items */
+  padding: 10px 15px; /* Increased padding */
+  margin-bottom: 8px; /* Increased margin */
+  border-radius: 4px;
+  border: 1px solid #004d00; /* Dark neon green border */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #b0b0b0; /* Lighter grey text */
+  transition: background-color 0.2s ease;
+}
+.uploaded-files-summary li:hover, .files-to-rename-list li:hover, .uploaded-files-list li:hover, .results-list li:hover {
+  background-color: #181818; /* Slightly lighter on hover */
+}
+
+
+.file-item-actionable .rename-button, .file-item-selectable .delete-file-button {
+  margin-left: 10px;
+  padding: 6px 12px; /* Adjusted padding */
+  font-size: 0.9em;
+}
+
+.download-link-item {
+  margin-left: 10px;
+  color: #00ff00;
+  text-decoration: none;
+  font-weight: bold;
+}
+.download-link-item:hover {
+  text-decoration: underline;
+  text-shadow: 0 0 5px #00ff00;
+}
+
+.tool-link-button {
+  margin-left: 20px;
+  padding: 8px 12px;
+  font-size: 1em;
+}
+.tool-link-button-small {
+  font-size: 0.9em;
+  padding: 6px 10px;
+}
+
+/* Styles for Tool1Page sections when .theme-tech-neon is applied to its root */
+.theme-tech-neon .tool-section {
+  margin-bottom: 40px;
+  padding: 25px; /* Increased padding */
+  border: 1px solid #003300;
+  border-radius: 8px;
+  background-color: #050505; /* Even darker section background */
+  box-shadow: 0 0 10px rgba(0, 255, 0, 0.1);
+}
+
+/* Input field styling for neon theme */
+.theme-tech-neon input[type="text"],
+.theme-tech-neon input[type="number"],
+.theme-tech-neon textarea,
+.theme-tech-neon select {
+  background-color: #000; /* Black background */
+  color: #00ff00; /* Neon green text */
+  border: 1px solid #00ff00; /* Neon green border */
+  padding: 10px; /* Increased padding */
+  border-radius: 4px;
+  box-shadow: 0 0 5px rgba(0, 255, 0, 0.3) inset; /* Inner glow */
+  font-family: 'Courier New', Courier, monospace; /* Techy font */
+}
+.theme-tech-neon input[type="text"]:focus,
+.theme-tech-neon input[type="number"]:focus,
+.theme-tech-neon textarea:focus,
+.theme-tech-neon select:focus {
+  outline: none;
+  box-shadow: 0 0 8px #00ff00, 0 0 5px rgba(0, 255, 0, 0.5) inset; /* Brighter glow on focus */
+  border-color: #33ff33; /* Brighter border on focus */
+}
+
+/* Checkbox styling for neon theme */
+.theme-tech-neon input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  width: 20px; /* Slightly larger */
+  height: 20px;
+  border: 2px solid #00ff00;
+  border-radius: 3px;
+  cursor: pointer;
+  position: relative;
+  margin-right: 10px; /* More space */
+  vertical-align: middle;
+  background-color: #000;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.theme-tech-neon input[type="checkbox"]:checked {
+  background-color: #00ff00;
+  box-shadow: 0 0 8px #00ff00;
+}
+
+.theme-tech-neon input[type="checkbox"]:checked::before {
+  content: '✔';
+  font-size: 16px; /* Adjusted size */
+  color: #000;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-weight: bold;
+}
+
+.theme-tech-neon label {
+  color: #00ff00; /* Neon green labels */
+  cursor: pointer; /* Make labels clickable for checkboxes */
 }

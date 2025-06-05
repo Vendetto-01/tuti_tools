@@ -269,19 +269,16 @@ const Tool1Page = () => {
   // --- End of CONVERT/MANAGE (from Tool2.js) State & Handlers ---
 
   return (
-    <div className="tool-page-container">
+    <div className="tool-page-container theme-tech-neon"> {/* Added theme class */}
       <header className="App-header"> {/* Consider a Layout component for repeated structures */}
-        <h1>Tool 1 Operations Hub</h1>
+        <h1>Tool 1</h1> {/* Renamed */}
         <nav>
           <Link to="/" className="tool-link-button">Back to Home Dashboard</Link>
         </nav>
       </header>
       <main className="App-main">
         <p>
-          This page consolidates all core functionalities:
-          File Upload (formerly Tool 1),
-          File Renaming (formerly Tool 2),
-          and M4A Conversion/Management (formerly Tool 3).
+          This tool consolidates: File Upload, File Renaming, and M4A Conversion/Management.
         </p>
 
         <section className="tool-section" id="upload-section">
@@ -454,7 +451,7 @@ const Tool1Page = () => {
         </section>
       </main>
       <footer className="App-footer">
-        <p>&copy; 2025 Tuti Tools - Tool 1 Operations</p>
+        <p>&copy; 2025 Tuti Tools - Tool 1</p> {/* Renamed */}
       </footer>
     </div>
   );

@@ -1,0 +1,76 @@
+.persistent-audio-player {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background-color: #282c34; /* Dark background, similar to App-header */
+  color: white;
+  padding: 10px 20px;
+  box-shadow: 0 -2px 5px rgba(0,0,0,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* Distribute space */
+  z-index: 1000; /* Ensure it's on top */
+  box-sizing: border-box;
+}
+
+.persistent-audio-player audio {
+  display: none; /* Hide the default browser audio element */
+}
+
+.persistent-audio-player .play-pause-button {
+  background-color: #61dafb; /* React blue */
+  color: #282c34;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.2s ease;
+  margin-right: 15px; /* Space between button and title */
+}
+
+.persistent-audio-player .play-pause-button:hover {
+  background-color: #21a1f1;
+}
+
+.persistent-audio-player .song-title {
+  font-size: 0.9em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-grow: 1; /* Allow title to take available space */
+}
+
+.persistent-audio-player .audio-error-message {
+  color: #ff6666; /* Light red for errors */
+  font-size: 0.8em;
+  margin-left: 15px;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 600px) {
+  .persistent-audio-player {
+    padding: 8px 10px;
+    flex-direction: column; /* Stack elements vertically on small screens */
+    align-items: flex-start; /* Align items to the start */
+  }
+
+  .persistent-audio-player .play-pause-button {
+    margin-bottom: 5px; /* Space below button when stacked */
+    width: 100%; /* Make button full width */
+  }
+  
+  .persistent-audio-player .song-title {
+    font-size: 0.8em;
+    width: 100%; /* Ensure title takes full width */
+    text-align: center; /* Center title text */
+    margin-bottom: 5px;
+  }
+
+  .persistent-audio-player .audio-error-message {
+    margin-left: 0;
+    width: 100%;
+    text-align: center;
+  }
+}
