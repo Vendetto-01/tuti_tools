@@ -209,6 +209,81 @@ app.get('/api/test-ffmpeg', (req, res) => {
   });
 });
 
+// Render.com debug endpoint
+app.get('/api/debug-render-paths', (req, res) => {
+  const debugInfo = {
+    environment: process.env.NODE_ENV,
+    workingDirectory: process.cwd(),
+    paths: {
+      __dirname: __dirname,
+      uploadsDir: path.resolve(__dirname, '../uploads/tool1_wavs'),
+      convertedDir: path.resolve(__dirname, 'converted/tool2_m4a'),
+      relativeConverted: path.join(__dirname, 'converted/tool2_m4a')
+    },
+    directoryTests: {},
+    filePermissions: {}
+  };
+
+  // Directory testleri
+  Object.keys(debugInfo.paths).forEach(key => {
+    const dirPath = debugInfo.paths[key];
+    try {
+      if (fs.existsSync(dirPath)) {
+        const stats = fs.statSync(dirPath);
+        debugInfo.directoryTests[key] = {
+          exists: true,
+          isDirectory: stats.isDirectory(),
+          isFile: stats.isFile()
+        };
+      } else {
+        debugInfo.directoryTests[key] = { exists: false };
+      }
+    } catch (error) {
+      debugInfo.directoryTests[key] = { error: error.message };
+    }
+  });
+
+  // Converted directory oluşturmayı test et
+  try {
+    const testDir = path.resolve(__dirname, 'converted/tool2_m4a');
+    fs.mkdirSync(testDir, { recursive: true });
+    debugInfo.convertedDirCreation = 'success';
+    
+    // Test file yazma
+    const testFile = path.join(testDir, 'test.txt');
+    fs.writeFileSync(testFile, 'test');
+    debugInfo.fileWriteTest = fs.existsSync(testFile) ? 'success' : 'failed';
+    
+    // Test file silme
+    if (fs.existsSync(testFile)) {
+      fs.unlinkSync(testFile);
+    }
+  } catch (error) {
+    debugInfo.convertedDirCreation = error.message;
+  }
+
+  // Upload directory'deki dosyaları listele
+  try {
+    const uploadsPath = path.resolve(__dirname, '../uploads/tool1_wavs');
+    if (fs.existsSync(uploadsPath)) {
+      const files = fs.readdirSync(uploadsPath);
+      debugInfo.uploadedFiles = files.slice(0, 3).map(file => {
+        const filePath = path.join(uploadsPath, file);
+        const stats = fs.statSync(filePath);
+        return {
+          name: file,
+          size: stats.size,
+          path: filePath
+        };
+      });
+    }
+  } catch (error) {
+    debugInfo.uploadedFiles = { error: error.message };
+  }
+
+  res.json(debugInfo);
+});
+
 // Serve static files and catch-all for React app ONLY in development
 if (process.env.NODE_ENV !== 'production') {
   console.log('Development mode: Serving static frontend files from backend.');

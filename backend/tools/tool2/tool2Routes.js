@@ -13,12 +13,14 @@ module.exports = function(uploadedWavFiles) {
 
   if (fs.existsSync(ffmpegPath)) {
     ffmpeg.setFfmpegPath(ffmpegPath);
+    console.log(`FFmpeg binary found at: ${ffmpegPath}`);
   } else {
     console.warn(`FFmpeg binary not found at ${ffmpegPath} (Tool2). Conversion might fail if not in system PATH.`);
   }
 
   if (fs.existsSync(ffprobePath)) {
     ffmpeg.setFfprobePath(ffprobePath);
+    console.log(`FFprobe binary found at: ${ffprobePath}`);
   } else {
     console.warn(`ffprobe binary not found at ${ffprobePath} (Tool2). Some operations might fail if not in system PATH.`);
   }
@@ -84,28 +86,58 @@ const sanitizeFilename = (name) => {
       }
 
       const inputFile = fileData.serverPath;
-      // Artık gerçek M4A formatını kullanabiliriz
       const originalBaseName = path.parse(fileData.serverFileName).name;
       const sanitizedBaseName = sanitizeFilename(originalBaseName);
       const outputFileName = `${sanitizedBaseName}.m4a`;
-      const outputPath = path.join(__dirname, '../../../converted/tool2_m4a');
-      const outputFile = path.join(outputPath, outputFileName);
+      
+      // Render.com için absolute path kullan
+      const outputPath = path.resolve(__dirname, '../../converted/tool2_m4a');
+      const outputFile = path.resolve(outputPath, outputFileName);
 
-      fs.mkdirSync(outputPath, { recursive: true });
+      // Directory'yi oluştur (Render.com'da gerekli)
+      try {
+        fs.mkdirSync(outputPath, { recursive: true });
+        console.log(`Output directory ensured: ${outputPath}`);
+      } catch (error) {
+        console.error('Error creating output directory:', error);
+        conversionResults.push({
+          id: fileData.id,
+          originalName: fileData.originalName,
+          status: 'error',
+          error: 'Failed to create output directory',
+          details: error.message
+        });
+        continue;
+      }
 
       const promise = new Promise((resolve) => {
         console.log(`Starting M4A conversion for (Tool2): ${fileData.originalName}`);
+        console.log(`Input file: ${inputFile}`);
+        console.log(`Output file: ${outputFile}`);
         
+        // Input file kontrolü
+        if (!fs.existsSync(inputFile)) {
+          console.error(`Input file does not exist: ${inputFile}`);
+          conversionResults.push({
+            id: fileData.id,
+            originalName: fileData.originalName,
+            status: 'error',
+            error: 'Input file not found'
+          });
+          resolve();
+          return;
+        }
+
         ffmpeg(inputFile)
-          .toFormat('ipod') // iPod formatını kullan (M4A oluşturur)
+          .toFormat('ipod') // M4A için
           .audioCodec('aac')
           .audioBitrate('128k')
           .audioChannels(2)
           .audioFrequency(44100)
           .outputOptions([
-            '-movflags', 'faststart', // Web için optimize et
-            '-brand', 'M4A ', // M4A brand ekle
-            '-strict', 'experimental' // AAC için gerekli
+            '-movflags', 'faststart',
+            '-brand', 'M4A ',
+            '-f', 'ipod' // Format belirt
           ])
           .on('start', (commandLine) => {
             console.log('FFmpeg command: ' + commandLine);
@@ -117,19 +149,31 @@ const sanitizeFilename = (name) => {
           })
           .on('end', () => {
             console.log(`M4A conversion finished for (Tool2): ${fileData.originalName}`);
-            fileData.status = 'converted';
-            fileData.convertedFileName = outputFileName;
-            fileData.convertedFilePath = outputFile;
-            fileData.downloadUrl = `/api/tool2/download/${outputFileName}`;
-            fileData.conversionError = null;
             
-            conversionResults.push({
-              id: fileData.id,
-              originalName: fileData.originalName,
-              status: 'success',
-              message: 'File converted successfully to M4A!',
-              downloadUrl: fileData.downloadUrl
-            });
+            // Output file kontrolü
+            if (fs.existsSync(outputFile)) {
+              fileData.status = 'converted';
+              fileData.convertedFileName = outputFileName;
+              fileData.convertedFilePath = outputFile;
+              fileData.downloadUrl = `/api/tool2/download/${outputFileName}`;
+              fileData.conversionError = null;
+              
+              conversionResults.push({
+                id: fileData.id,
+                originalName: fileData.originalName,
+                status: 'success',
+                message: 'File converted successfully to M4A!',
+                downloadUrl: fileData.downloadUrl
+              });
+            } else {
+              console.error(`Output file was not created: ${outputFile}`);
+              conversionResults.push({
+                id: fileData.id,
+                originalName: fileData.originalName,
+                status: 'error',
+                error: 'Output file was not created'
+              });
+            }
             resolve();
           })
           .on('error', (err) => {
@@ -145,7 +189,7 @@ const sanitizeFilename = (name) => {
             });
             resolve();
           })
-          .save(outputFile);
+          .save(outputFile); // Absolute path kullan
       });
       conversionPromises.push(promise);
     }
