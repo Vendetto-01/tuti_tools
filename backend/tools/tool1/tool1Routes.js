@@ -6,9 +6,21 @@ const fs = require('fs');
 
 const router = express.Router();
 
-// Ensure FFmpeg path is set if not in system PATH (optional, adjust as needed)
-// ffmpeg.setFfmpegPath('C:\\path\\to\\your\\ffmpeg\\bin\\ffmpeg.exe'); // Example for Windows
-// ffmpeg.setFfprobePath('C:\\path\\to\\your\\ffmpeg\\bin\\ffprobe.exe'); // Example for Windows
+// Ensure FFmpeg path is set to the locally downloaded binaries
+const ffmpegPath = path.join(__dirname, '../../bin/ffmpeg');
+const ffprobePath = path.join(__dirname, '../../bin/ffprobe');
+
+if (fs.existsSync(ffmpegPath)) {
+  ffmpeg.setFfmpegPath(ffmpegPath);
+} else {
+  console.warn(`FFmpeg binary not found at ${ffmpegPath}. Conversion might fail if not in system PATH.`);
+}
+
+if (fs.existsSync(ffprobePath)) {
+  ffmpeg.setFfprobePath(ffprobePath);
+} else {
+  console.warn(`ffprobe binary not found at ${ffprobePath}. Some operations might fail if not in system PATH.`);
+}
 
 // Configure Multer for file uploads
 const storage = multer.diskStorage({
