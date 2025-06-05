@@ -43,9 +43,30 @@ module.exports = function(uploadedWavFiles) {
     const ext = path.extname(oldServerFileName);
     const baseNameWithoutExt = path.basename(oldServerFileName, ext);
 
-    // Append 'a' to the base name
-    const newBaseNameWithoutExt = `${baseNameWithoutExt}a`;
-    const newServerFileName = `${newBaseNameWithoutExt}${ext}`;
+    // New renaming logic: remove hyphen and subsequent characters from base name
+    let newBaseNameFromRule = baseNameWithoutExt;
+    const hyphenIndex = baseNameWithoutExt.indexOf('-');
+
+    if (hyphenIndex !== -1) {
+        newBaseNameFromRule = baseNameWithoutExt.substring(0, hyphenIndex);
+    }
+
+    // If the derived base name is the same as the original, no actual rename is needed.
+    // This handles cases where no hyphen is found, or the name already conforms to the target pattern.
+    if (newBaseNameFromRule === baseNameWithoutExt) {
+      return res.status(200).json({
+        message: `File '${oldServerFileName}' does not require renaming based on the new rule (no hyphen found or name already conforms).`,
+        updatedFile: {
+          id: fileData.id,
+          originalName: fileData.originalName,
+          serverFileName: fileData.serverFileName,
+          status: fileData.status // Status remains 'uploaded', no rename occurred
+        }
+      });
+    }
+
+    // Proceed with rename using the new base name
+    const newServerFileName = `${newBaseNameFromRule}${ext}`;
     const newServerPath = path.join(dirName, newServerFileName);
 
     // Check if a file with the new name already exists (optional, but good practice)
