@@ -2,6 +2,31 @@ const express = require('express');
 const path = require('path');
 const fs = require('fs');
 
+const sanitizeFilename = (name) => {
+  if (typeof name !== 'string') return 'output_default'; // Return a default if name is not a string
+  // Replace invalid Windows filename characters and control characters
+  let sanitized = name.replace(/[<>:"/\\|?*\x00-\x1F]/g, '_');
+  // Replace multiple underscores with a single one
+  sanitized = sanitized.replace(/__+/g, '_');
+  // Remove leading/trailing underscores, dots, or spaces
+  sanitized = sanitized.replace(/^[_.\s]+|[_.\s]+$/g, '');
+  // Handle cases where the name becomes empty or just dots
+  if (sanitized === '' || sanitized === '.' || sanitized === '..') {
+    sanitized = 'output'; // Or some other default like 'processed_file'
+  }
+  // Trim to a reasonable length (e.g., 100 chars for the name part)
+  const maxLength = 100;
+  if (sanitized.length > maxLength) {
+    sanitized = sanitized.substring(0, maxLength);
+    // Re-check for trailing dots/spaces after substring and ensure not empty
+    sanitized = sanitized.replace(/[_.\s]+$/g, '');
+    if (sanitized === '' || sanitized === '.' || sanitized === '..') {
+        sanitized = 'output_trimmed';
+    }
+  }
+  return sanitized;
+};
+
 // This module exports a function that takes uploadedWavFiles as an argument
 module.exports = function(uploadedWavFiles) {
   const router = express.Router();
@@ -54,8 +79,25 @@ module.exports = function(uploadedWavFiles) {
     if (!newNameWithoutExt || newNameWithoutExt === nameWithoutExt) {
         return res.status(400).json({ error: 'No change in filename based on smart rename logic or name would be empty.' });
     }
+    
+    const sanitizedNewNameWithoutExt = sanitizeFilename(newNameWithoutExt);
 
-    const newConvertedName = `${newNameWithoutExt}${extension}`;
+    // If sanitization results in an empty name, or no change where one was expected, handle appropriately
+    if (!sanitizedNewNameWithoutExt || (newNameWithoutExt !== nameWithoutExt && sanitizedNewNameWithoutExt === nameWithoutExt) ) {
+        // If original was not changed by smart logic, but sanitization made it same as original, it's fine.
+        // But if smart logic DID change it, and THEN sanitization made it empty or reverted it, that's an issue.
+        // The check `newNameWithoutExt !== nameWithoutExt` ensures we only error if smart logic *intended* a change.
+        if (newNameWithoutExt !== nameWithoutExt && (sanitizedNewNameWithoutExt === '' || sanitizedNewNameWithoutExt === nameWithoutExt)) {
+             return res.status(400).json({ error: 'Filename becomes invalid or unchanged after sanitization during smart rename.' });
+        }
+    }
+    // Ensure the name is not empty after sanitization if it was supposed to be changed
+    if (newNameWithoutExt !== nameWithoutExt && !sanitizedNewNameWithoutExt) {
+        return res.status(400).json({ error: 'Filename becomes empty after sanitization during smart rename.' });
+    }
+
+
+    const newConvertedName = `${sanitizedNewNameWithoutExt || nameWithoutExt}${extension}`; // Fallback to original name if sanitized is empty
     const newConvertedPath = path.join(path.dirname(currentConvertedPath), newConvertedName);
 
     if (fs.existsSync(newConvertedPath)) {

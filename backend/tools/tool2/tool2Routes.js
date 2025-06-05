@@ -23,6 +23,31 @@ module.exports = function(uploadedWavFiles) {
     console.warn(`ffprobe binary not found at ${ffprobePath} (Tool2). Some operations might fail if not in system PATH.`);
   }
 
+const sanitizeFilename = (name) => {
+  if (typeof name !== 'string') return 'output_default'; // Return a default if name is not a string
+  // Replace invalid Windows filename characters and control characters
+  let sanitized = name.replace(/[<>:"/\\|?*\x00-\x1F]/g, '_');
+  // Replace multiple underscores with a single one
+  sanitized = sanitized.replace(/__+/g, '_');
+  // Remove leading/trailing underscores, dots, or spaces
+  sanitized = sanitized.replace(/^[_.\s]+|[_.\s]+$/g, '');
+  // Handle cases where the name becomes empty or just dots
+  if (sanitized === '' || sanitized === '.' || sanitized === '..') {
+    sanitized = 'output'; // Or some other default like 'processed_file'
+  }
+  // Trim to a reasonable length (e.g., 100 chars for the name part)
+  const maxLength = 100;
+  if (sanitized.length > maxLength) {
+    sanitized = sanitized.substring(0, maxLength);
+    // Re-check for trailing dots/spaces after substring and ensure not empty
+    sanitized = sanitized.replace(/[_.\s]+$/g, '');
+    if (sanitized === '' || sanitized === '.' || sanitized === '..') {
+        sanitized = 'output_trimmed';
+    }
+  }
+  return sanitized;
+};
+
   // GET route to list uploaded WAV files ready for conversion
   router.get('/list-uploaded-wavs', (req, res) => {
     const filesToConvert = uploadedWavFiles.filter(f => f.status === 'uploaded');
@@ -60,7 +85,9 @@ module.exports = function(uploadedWavFiles) {
 
       const inputFile = fileData.serverPath;
       // Artık gerçek M4A formatını kullanabiliriz
-      const outputFileName = `${path.parse(fileData.serverFileName).name}.m4a`;
+      const originalBaseName = path.parse(fileData.serverFileName).name;
+      const sanitizedBaseName = sanitizeFilename(originalBaseName);
+      const outputFileName = `${sanitizedBaseName}.m4a`;
       const outputPath = path.join(__dirname, '../../../converted/tool2_m4a');
       const outputFile = path.join(outputPath, outputFileName);
 
