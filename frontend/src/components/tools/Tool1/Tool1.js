@@ -30,7 +30,9 @@ function Tool1() {
     formData.append('wavFile', selectedFile);
 
     try {
-      const response = await fetch('/api/tool1/convert-wav-to-m4a', {
+      const apiUrl = process.env.REACT_APP_API_URL || ''; // Fallback to empty string if not set
+
+      const response = await fetch(`${apiUrl}/api/tool1/convert-wav-to-m4a`, {
         method: 'POST',
         body: formData,
       });
@@ -39,7 +41,8 @@ function Tool1() {
 
       if (response.ok) {
         setMessage(data.message || 'File converted successfully!');
-        setDownloadUrl(data.downloadUrl);
+        // Ensure downloadUrl is also prefixed if it's a relative path from the backend
+        setDownloadUrl(data.downloadUrl.startsWith('http') ? data.downloadUrl : `${apiUrl}${data.downloadUrl}`);
       } else {
         setError(data.error || 'An unknown error occurred during conversion.');
         setMessage('Conversion failed.');
@@ -77,7 +80,7 @@ function Tool1() {
       {downloadUrl && (
         <div className="download-section">
           <p>Your M4A file is ready!</p>
-          <a href={downloadUrl} download className="download-link">
+          <a href={downloadUrl.startsWith('http') ? downloadUrl : (process.env.REACT_APP_API_URL || '') + downloadUrl} download className="download-link">
             Download Converted File
           </a>
         </div>
