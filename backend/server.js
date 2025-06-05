@@ -1,7 +1,13 @@
 const express = require('express');
 const path = require('path');
 const cors = require('cors'); // Import cors
-const tool1Routes = require('./tools/tool1/tool1Routes'); // Import Tool1 routes
+
+// In-memory store for uploaded WAV file metadata
+// For production, consider a more persistent store (e.g., database, file system db)
+const uploadedWavFiles = [];
+
+const tool1Routes = require('./tools/tool1/tool1Routes')(uploadedWavFiles); // Pass shared array
+const tool2Routes = require('./tools/tool2/tool2Routes')(uploadedWavFiles); // Pass shared array
 
 const app = express();
 const port = process.env.PORT || 3001; // Backend server port
@@ -39,6 +45,7 @@ app.use(express.static(path.join(__dirname, '../frontend/build')));
 
 // API Routes
 app.use('/api/tool1', tool1Routes); // Use Tool1 routes
+app.use('/api/tool2', tool2Routes); // Mount Tool2 routes
 
 // API endpoint example
 app.get('/api/hello', (req, res) => {
