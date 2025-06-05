@@ -129,15 +129,14 @@ const sanitizeFilename = (name) => {
         }
 
         ffmpeg(inputFile)
-          .toFormat('ipod') // M4A için
+          .format('mp4') // M4A için mp4 container kullan
           .audioCodec('aac')
           .audioBitrate('128k')
           .audioChannels(2)
           .audioFrequency(44100)
           .outputOptions([
             '-movflags', 'faststart',
-            '-brand', 'M4A ',
-            '-f', 'ipod' // Format belirt
+            '-f', 'mp4' // Format açıkça belirt
           ])
           .on('start', (commandLine) => {
             console.log('FFmpeg command: ' + commandLine);
