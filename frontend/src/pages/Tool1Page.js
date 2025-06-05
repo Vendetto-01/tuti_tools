@@ -284,34 +284,6 @@ const Tool1Page = () => {
     }
   };
 
-  const handleDownloadSelectedM4As = () => {
-    if (selectedFileIdsForConversion.size === 0) {
-      setConvertUserMessage("Please select files to download.");
-      return;
-    }
-    let downloadedCount = 0;
-    selectedFileIdsForConversion.forEach(fileId => {
-      const fileToDownload = filesForConversion.find(f => f.id === fileId);
-      if (fileToDownload && fileToDownload.m4aDownloadUrl) {
-        // Create a temporary link and click it to trigger download
-        const link = document.createElement('a');
-        link.href = fileToDownload.m4aDownloadUrl;
-        // Extract filename from URL or use a default
-        const filename = fileToDownload.m4aConvertedFileName || fileToDownload.serverFileName.replace(/\.[^/.]+$/, "") + ".m4a";
-        link.setAttribute('download', filename);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        downloadedCount++;
-      }
-    });
-    if (downloadedCount > 0) {
-      setConvertUserMessage(`${downloadedCount} M4A file(s) download initiated.`);
-    } else {
-      setConvertUserMessage("No selected files have downloadable M4A versions.");
-    }
-  };
-
   const handleDeleteSelectedFiles = async () => {
     if (selectedFileIdsForConversion.size === 0) {
       setConvertUserMessage("Please select files to delete.");
@@ -356,6 +328,8 @@ const Tool1Page = () => {
     setSelectedFileIdsForConversion(new Set()); // Clear selection
     setIsConvertLoading(false);
   };
+
+  // handleDownloadSelectedM4As function removed
 
   const handleDeleteConvertedFile = async (fileId, fileName) => {
     // eslint-disable-next-line no-restricted-globals
@@ -546,14 +520,7 @@ const Tool1Page = () => {
                   >
                     Convert Selected ({selectedFileIdsForConversion.size})
                   </button>
-                  <button
-                    onClick={handleDownloadSelectedM4As}
-                    disabled={isConvertLoading || selectedFileIdsForConversion.size === 0}
-                    className="batch-download-button"
-                    style={{ marginRight: '10px' }}
-                  >
-                    Download Selected M4As ({selectedFileIdsForConversion.size})
-                  </button>
+                  {/* "Download Selected M4As" button removed */}
                   <button
                     onClick={handleDeleteSelectedFiles}
                     disabled={isConvertLoading || selectedFileIdsForConversion.size === 0}
