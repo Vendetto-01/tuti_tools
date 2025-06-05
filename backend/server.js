@@ -1,7 +1,7 @@
 const express = require('express');
 const path = require('path');
-const fs = require('fs'); // Added fs require
-const cors = require('cors'); // Import cors
+const fs = require('fs');
+const cors = require('cors');
 
 // In-memory store for uploaded WAV file metadata
 // For production, consider a more persistent store (e.g., database, file system db)
@@ -54,6 +54,161 @@ app.get('/api/hello', (req, res) => {
   res.json({ message: 'Hello from the backend!' });
 });
 
+// FFmpeg test endpoint - sadece geliştirme/test için
+app.get('/api/test-ffmpeg', (req, res) => {
+  const ffmpeg = require('fluent-ffmpeg');
+  const { spawn } = require('child_process');
+
+  // FFmpeg binary path'ini kontrol et
+  const ffmpegPath = path.join(__dirname, 'bin/ffmpeg');
+  
+  let ffmpegInfo = {
+    binaryExists: fs.existsSync(ffmpegPath),
+    binaryPath: ffmpegPath,
+    systemFFmpeg: false,
+    formats: [],
+    codecs: [],
+    error: null,
+    environment: process.env.NODE_ENV || 'development'
+  };
+
+  // Sistem FFmpeg'ini kontrol et
+  const testSystemFFmpeg = spawn('ffmpeg', ['-version'], { stdio: 'pipe' });
+  
+  testSystemFFmpeg.on('close', (code) => {
+    if (code === 0) {
+      ffmpegInfo.systemFFmpeg = true;
+    }
+    
+    // FFmpeg formatlarını kontrol et
+    const ffmpegBinary = ffmpegInfo.binaryExists ? ffmpegPath : 'ffmpeg';
+    const formatProcess = spawn(ffmpegBinary, ['-formats'], { stdio: 'pipe' });
+    let formatOutput = '';
+    
+    formatProcess.stdout.on('data', (data) => {
+      formatOutput += data.toString();
+    });
+    
+    formatProcess.stderr.on('data', (data) => {
+      formatOutput += data.toString();
+    });
+    
+    formatProcess.on('close', (formatCode) => {
+      if (formatCode === 0) {
+        // M4A ve MP4 formatlarını ara
+        const lines = formatOutput.split('\n');
+        lines.forEach(line => {
+          if (line.includes('m4a') || line.includes('mp4') || line.includes('ipod') || line.includes('mp4')) {
+            ffmpegInfo.formats.push(line.trim());
+          }
+        });
+      }
+      
+      // Codec'leri kontrol et
+      const codecProcess = spawn(ffmpegBinary, ['-codecs'], { stdio: 'pipe' });
+      let codecOutput = '';
+      
+      codecProcess.stdout.on('data', (data) => {
+        codecOutput += data.toString();
+      });
+      
+      codecProcess.stderr.on('data', (data) => {
+        codecOutput += data.toString();
+      });
+      
+      codecProcess.on('close', (codecCode) => {
+        if (codecCode === 0) {
+          const lines = codecOutput.split('\n');
+          lines.forEach(line => {
+            if (line.toLowerCase().includes('aac')) {
+              ffmpegInfo.codecs.push(line.trim());
+            }
+          });
+        }
+        
+        res.json(ffmpegInfo);
+      });
+      
+      codecProcess.on('error', (err) => {
+        ffmpegInfo.error = `Codec check failed: ${err.message}`;
+        res.json(ffmpegInfo);
+      });
+    });
+    
+    formatProcess.on('error', (err) => {
+      ffmpegInfo.error = `Format check failed: ${err.message}`;
+      res.json(ffmpegInfo);
+    });
+  });
+  
+  testSystemFFmpeg.on('error', (err) => {
+    // Sistem FFmpeg yok, sadece local binary ile devam et
+    ffmpegInfo.systemFFmpeg = false;
+    
+    if (!ffmpegInfo.binaryExists) {
+      ffmpegInfo.error = 'No FFmpeg binary found';
+      return res.json(ffmpegInfo);
+    }
+    
+    // Local binary ile format kontrolü yap
+    const formatProcess = spawn(ffmpegPath, ['-formats'], { stdio: 'pipe' });
+    let formatOutput = '';
+    
+    formatProcess.stdout.on('data', (data) => {
+      formatOutput += data.toString();
+    });
+    
+    formatProcess.stderr.on('data', (data) => {
+      formatOutput += data.toString();
+    });
+    
+    formatProcess.on('close', (formatCode) => {
+      if (formatCode === 0) {
+        const lines = formatOutput.split('\n');
+        lines.forEach(line => {
+          if (line.includes('m4a') || line.includes('mp4') || line.includes('ipod')) {
+            ffmpegInfo.formats.push(line.trim());
+          }
+        });
+      }
+      
+      // Codec kontrolü de ekle
+      const codecProcess = spawn(ffmpegPath, ['-codecs'], { stdio: 'pipe' });
+      let codecOutput = '';
+      
+      codecProcess.stdout.on('data', (data) => {
+        codecOutput += data.toString();
+      });
+      
+      codecProcess.stderr.on('data', (data) => {
+        codecOutput += data.toString();
+      });
+      
+      codecProcess.on('close', (codecCode) => {
+        if (codecCode === 0) {
+          const lines = codecOutput.split('\n');
+          lines.forEach(line => {
+            if (line.toLowerCase().includes('aac')) {
+              ffmpegInfo.codecs.push(line.trim());
+            }
+          });
+        }
+        res.json(ffmpegInfo);
+      });
+      
+      codecProcess.on('error', (err) => {
+        ffmpegInfo.error = `Local codec check failed: ${err.message}`;
+        res.json(ffmpegInfo);
+      });
+    });
+    
+    formatProcess.on('error', (err) => {
+      ffmpegInfo.error = `Local FFmpeg test failed: ${err.message}`;
+      res.json(ffmpegInfo);
+    });
+  });
+});
+
 // Serve static files and catch-all for React app ONLY in development
 if (process.env.NODE_ENV !== 'production') {
   console.log('Development mode: Serving static frontend files from backend.');
@@ -77,7 +232,6 @@ if (process.env.NODE_ENV !== 'production') {
     res.send('Tuti Tools API is running.');
   });
 }
-
 
 app.listen(port, () => {
   console.log(`Backend server listening at http://localhost:${port} in ${process.env.NODE_ENV || 'development'} mode`);

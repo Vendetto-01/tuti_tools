@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import './Tool2.css'; // We'll use similar styling to Tool1's results
+import './Tool2.css';
 
 function Tool2() {
   const [uploadedWavs, setUploadedWavs] = useState([]);
@@ -24,7 +24,7 @@ function Tool2() {
       if (data.length === 0) {
         setConversionMessage('No WAV files found. Please upload files using Tool 1 first.');
       } else {
-        setConversionMessage('Select files to convert to M4A.');
+        setConversionMessage('Select files to convert to MP4 audio format.');
       }
     } catch (err) {
       console.error('Error fetching uploaded WAVs:', err);
@@ -58,7 +58,7 @@ function Tool2() {
     }
 
     setIsLoading(true);
-    setConversionMessage(`Converting ${selectedFileIds.size} file(s)...`);
+    setConversionMessage(`Converting ${selectedFileIds.size} file(s) to MP4 audio format...`);
     setConversionResults([]);
     setFetchError('');
 
@@ -109,7 +109,7 @@ function Tool2() {
       return;
     }
 
-    setIsLoading(true); // Use general loading state or a specific one for delete
+    setIsLoading(true);
     setFetchError('');
     try {
       const apiUrl = process.env.REACT_APP_API_URL || '';
@@ -121,11 +121,9 @@ function Tool2() {
         const errorData = await response.json();
         throw new Error(errorData.error || `Failed to delete file ${fileName}.`);
       }
-      // const data = await response.json(); // Contains success message
-      // console.log(data.message);
       fetchUploadedWavs(); // Refresh the list after deletion
-      setConversionMessage(`File "${fileName}" marked for deletion.`); // Update general message
-      setConversionResults(prevResults => prevResults.filter(r => r.id !== fileId)); // Remove from current results if present
+      setConversionMessage(`File "${fileName}" marked for deletion.`);
+      setConversionResults(prevResults => prevResults.filter(r => r.id !== fileId));
     } catch (err) {
       console.error('Error deleting file:', err);
       setFetchError(err.message);
@@ -134,12 +132,11 @@ function Tool2() {
     }
   };
 
-
   return (
     <div className="tool-container tool2-converter">
-      <h2>Tool 2: Convert Uploaded WAVs to M4A</h2>
+      <h2>Tool 2: Convert Uploaded WAVs to MP4 Audio</h2>
       <p className="tool-description">
-        Files uploaded via Tool 1 will appear here. Select files and convert them to M4A.
+        Files uploaded via Tool 1 will appear here. Select files and convert them to MP4 audio format.
       </p>
 
       <button onClick={fetchUploadedWavs} disabled={isLoading} className="refresh-button">
@@ -180,7 +177,7 @@ function Tool2() {
             disabled={isLoading || selectedFileIds.size === 0} 
             className="convert-selected-button"
           >
-            {isLoading ? 'Converting...' : `Convert ${selectedFileIds.size} Selected File(s)`}
+            {isLoading ? 'Converting...' : `Convert ${selectedFileIds.size} Selected File(s) to MP4`}
           </button>
         </div>
       )}
@@ -196,9 +193,9 @@ function Tool2() {
                 <span className="file-name">{result.originalName}</span>
                 {result.status === 'success' ? (
                   <>
-                    <span className="status-text success">Converted</span>
+                    <span className="status-text success">Converted to MP4</span>
                     <a href={result.downloadUrl} download className="download-link-item">
-                      Download M4A
+                      Download MP4
                     </a>
                   </>
                 ) : (

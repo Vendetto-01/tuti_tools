@@ -2,7 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { v4: uuidv4 } = require('uuid'); // For generating unique IDs
+const { v4: uuidv4 } = require('uuid');
 
 // This module now exports a function that takes uploadedWavFiles as an argument
 module.exports = function(uploadedWavFiles) {
@@ -11,31 +11,40 @@ module.exports = function(uploadedWavFiles) {
   // Configure Multer for file uploads
   const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-      // Save to a general 'uploads' directory, not specific to tool1 anymore if it's a shared pool
-      // Or keep it tool1 specific if uploads are only for this initial step.
-      // For this refactor, let's assume uploads are still initiated by "Tool1" conceptually.
-      const uploadPath = path.join(__dirname, '../../../uploads/tool1_wavs'); // New distinct folder
+      const uploadPath = path.join(__dirname, '../../../uploads/tool1_wavs');
       fs.mkdirSync(uploadPath, { recursive: true });
       cb(null, uploadPath);
     },
     filename: (req, file, cb) => {
-      // Sanitize originalname for use in server filename
-      // Replace spaces with underscores, then replace non-alphanumeric (excluding dot and hyphen) with underscore
-      const sanitizedOriginalName = file.originalname
-        .replace(/\s+/g, '_')
-        .replace(/[^a-zA-Z0-9._-]/g, '_');
-      cb(null, `${Date.now()}-${uuidv4()}-${sanitizedOriginalName}`);
+      // Türkçe karakterleri düzgün şekilde handle et
+      const originalName = Buffer.from(file.originalname, 'latin1').toString('utf8');
+      
+      // Dosya adını temizle - sadece güvenli karakterleri tut
+      const sanitizedOriginalName = originalName
+        .replace(/\s+/g, '_') // Boşlukları underscore ile değiştir
+        .replace(/[^\w\-_.]/g, '') // Sadece harf, rakam, tire, underscore ve nokta bırak
+        .substring(0, 100); // Maksimum 100 karakter
+      
+      // Unique ID ekle
+      const uniqueId = uuidv4().substring(0, 8); // Kısa unique ID
+      const timestamp = Date.now();
+      
+      cb(null, `${timestamp}-${uniqueId}-${sanitizedOriginalName}`);
     }
   });
 
   const upload = multer({
     storage: storage,
     fileFilter: (req, file, cb) => {
-      if (file.mimetype === 'audio/wav' || file.mimetype === 'audio/x-wav') {
+      // MIME type kontrolü
+      if (file.mimetype === 'audio/wav' || file.mimetype === 'audio/x-wav' || file.originalname.toLowerCase().endsWith('.wav')) {
         cb(null, true);
       } else {
         cb(new Error('Invalid file type. Only WAV files are allowed.'), false);
       }
+    },
+    limits: {
+      fileSize: 100 * 1024 * 1024 // 100MB limit
     }
   });
 
@@ -48,21 +57,24 @@ module.exports = function(uploadedWavFiles) {
     const successfullyUploaded = [];
 
     req.files.forEach(file => {
+      // Orijinal dosya adını düzgün şekilde decode et
+      const originalName = Buffer.from(file.originalname, 'latin1').toString('utf8');
+      
       const fileData = {
-        id: uuidv4(), // Generate a unique ID for each file
-        originalName: file.originalname,
+        id: uuidv4(),
+        originalName: originalName, // Düzeltilmiş orijinal ad
         serverFileName: file.filename,
-        serverPath: file.path, // Full path to the uploaded file
+        serverPath: file.path,
         mimetype: file.mimetype,
         size: file.size,
-        status: 'uploaded', // Initial status
+        status: 'uploaded',
         uploadTimestamp: new Date().toISOString(),
         convertedFileName: null,
         convertedFilePath: null,
         downloadUrl: null,
         conversionError: null,
       };
-      uploadedWavFiles.push(fileData); // Add to the shared in-memory array
+      uploadedWavFiles.push(fileData);
       successfullyUploaded.push({
         id: fileData.id,
         originalName: fileData.originalName,
@@ -71,16 +83,12 @@ module.exports = function(uploadedWavFiles) {
     });
 
     console.log(`${successfullyUploaded.length} WAV files uploaded and stored in memory array.`);
-    console.log('Current uploadedWavFiles:', uploadedWavFiles); // For debugging
 
     res.status(201).json({
       message: `${successfullyUploaded.length} file(s) uploaded successfully.`,
       uploadedFiles: successfullyUploaded
     });
   });
-
-  // Note: The FFmpeg setup and download endpoint are removed from here.
-  // They will be part of tool2Routes.js
 
   return router;
 };

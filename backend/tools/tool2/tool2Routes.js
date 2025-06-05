@@ -26,7 +26,7 @@ module.exports = function(uploadedWavFiles) {
   // GET route to list uploaded WAV files ready for conversion
   router.get('/list-uploaded-wavs', (req, res) => {
     const filesToConvert = uploadedWavFiles.filter(f => f.status === 'uploaded');
-    res.json(filesToConvert.map(f => ({ // Send only necessary info to client
+    res.json(filesToConvert.map(f => ({
       id: f.id,
       originalName: f.originalName,
       size: f.size,
@@ -36,7 +36,7 @@ module.exports = function(uploadedWavFiles) {
 
   // POST route for converting selected files
   router.post('/convert-selected-to-m4a', async (req, res) => {
-    const { fileIds } = req.body; // Expecting an array of file IDs
+    const { fileIds } = req.body;
 
     if (!fileIds || !Array.isArray(fileIds) || fileIds.length === 0) {
       return res.status(400).json({ error: 'No file IDs provided for conversion.' });
@@ -49,23 +49,39 @@ module.exports = function(uploadedWavFiles) {
       const fileData = uploadedWavFiles.find(f => f.id === id && f.status === 'uploaded');
 
       if (!fileData) {
-        conversionResults.push({ id: id, originalName: `Unknown (ID: ${id})`, status: 'error', error: 'File not found or already processed.' });
+        conversionResults.push({ 
+          id: id, 
+          originalName: `Unknown (ID: ${id})`, 
+          status: 'error', 
+          error: 'File not found or already processed.' 
+        });
         continue;
       }
 
       const inputFile = fileData.serverPath;
-      // Use a consistent naming scheme for converted files, perhaps based on original name + id
-      const outputFileName = `${path.parse(fileData.serverFileName).name}.m4a`;
-      const outputPath = path.join(__dirname, '../../../converted/tool2_m4a'); // New distinct folder
+      // MP4 formatını kullan (M4A yerine)
+      const outputFileName = `${path.parse(fileData.serverFileName).name}.mp4`;
+      const outputPath = path.join(__dirname, '../../../converted/tool2_m4a');
       const outputFile = path.join(outputPath, outputFileName);
 
       fs.mkdirSync(outputPath, { recursive: true });
 
       const promise = new Promise((resolve) => {
         console.log(`Starting conversion for (Tool2): ${fileData.originalName}`);
+        
         ffmpeg(inputFile)
-          .toFormat('m4a')
-          .audioCodec('aac') // Re-enabled AAC codec
+          .toFormat('mp4') // M4A yerine MP4 kullan
+          .audioCodec('aac')
+          .audioBitrate('128k') // Bitrate ekle
+          .audioChannels(2) // Stereo
+          .audioFrequency(44100) // Sample rate
+          .outputOptions([
+            '-movflags', 'faststart', // Web için optimize et
+            '-strict', 'experimental' // AAC için gerekli olabilir
+          ])
+          .on('start', (commandLine) => {
+            console.log('FFmpeg command: ' + commandLine);
+          })
           .on('progress', (progress) => {
             if (progress.percent) {
               console.log(`Processing (Tool2) ${fileData.originalName}: ${progress.percent.toFixed(2)}% done`);
@@ -73,16 +89,12 @@ module.exports = function(uploadedWavFiles) {
           })
           .on('end', () => {
             console.log(`Conversion finished for (Tool2): ${fileData.originalName}`);
-            // Update fileData in the shared array
             fileData.status = 'converted';
             fileData.convertedFileName = outputFileName;
             fileData.convertedFilePath = outputFile;
-            fileData.downloadUrl = `/api/tool2/download/${outputFileName}`; // Tool2 download route
+            fileData.downloadUrl = `/api/tool2/download/${outputFileName}`;
             fileData.conversionError = null;
             
-            // Original uploaded WAV is NOT deleted here, as it might be needed if conversion is retried
-            // or if the user wants to convert to other formats later. Deletion policy can be added.
-
             conversionResults.push({
               id: fileData.id,
               originalName: fileData.originalName,
@@ -93,7 +105,7 @@ module.exports = function(uploadedWavFiles) {
             resolve();
           })
           .on('error', (err) => {
-            console.error(`Error during conversion for (Tool2) ${fileData.originalName}:`, err.message);
+            console.error(`Error during conversion for (Tool2) ${fileData.originalName}:`, err);
             fileData.status = 'conversion_failed';
             fileData.conversionError = err.message;
             conversionResults.push({
@@ -103,14 +115,14 @@ module.exports = function(uploadedWavFiles) {
               error: 'Error during file conversion.',
               details: err.message
             });
-            resolve(); // Resolve even on error to process all selected files
+            resolve();
           })
           .save(outputFile);
       });
       conversionPromises.push(promise);
     }
 
-    await Promise.all(conversionPromises); // Wait for all selected files to be processed
+    await Promise.all(conversionPromises);
     console.log('All selected conversions attempted. Current uploadedWavFiles:', uploadedWavFiles);
     res.json(conversionResults);
   });
@@ -118,15 +130,17 @@ module.exports = function(uploadedWavFiles) {
   // GET route for downloading the converted file (from Tool2)
   router.get('/download/:filename', (req, res) => {
     const filename = req.params.filename;
-    // Ensure this path matches where Tool2 saves its converted files
     const filePath = path.join(__dirname, '../../../converted/tool2_m4a', filename);
 
     if (fs.existsSync(filePath)) {
+      // Content-Type'ı doğru ayarla
+      res.setHeader('Content-Type', 'audio/mp4');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      
       res.download(filePath, filename, (err) => {
         if (err) {
           console.error('Error downloading file (Tool2):', err);
         }
-        // Optional: Delete after download, or implement a cleanup strategy
       });
     } else {
       res.status(404).json({ error: 'File not found (Tool2).' });
@@ -143,22 +157,15 @@ module.exports = function(uploadedWavFiles) {
     }
 
     const fileData = uploadedWavFiles[fileIndex];
-    let originalFileDeleted = false;
-    let convertedFileDeleted = false;
 
     // Attempt to delete the original uploaded file
     if (fileData.serverPath && fs.existsSync(fileData.serverPath)) {
       try {
         fs.unlinkSync(fileData.serverPath);
         console.log(`Deleted original uploaded file: ${fileData.serverPath}`);
-        originalFileDeleted = true;
       } catch (err) {
         console.error(`Error deleting original file ${fileData.serverPath}:`, err);
-        // Continue, as we still want to remove it from the list
       }
-    } else {
-      console.log(`Original file path not found or already deleted: ${fileData.serverPath}`);
-      originalFileDeleted = true; // Consider it "deleted" if not found
     }
 
     // Attempt to delete the converted file if it exists
@@ -166,15 +173,10 @@ module.exports = function(uploadedWavFiles) {
       try {
         fs.unlinkSync(fileData.convertedFilePath);
         console.log(`Deleted converted file: ${fileData.convertedFilePath}`);
-        convertedFileDeleted = true;
       } catch (err) {
         console.error(`Error deleting converted file ${fileData.convertedFilePath}:`, err);
       }
-    } else if (fileData.status === 'converted') { // If status is converted but path is missing
-      console.log(`Converted file path not found or already deleted: ${fileData.convertedFilePath}`);
-      convertedFileDeleted = true; // Consider it "deleted"
     }
-
 
     // Remove from the in-memory array
     uploadedWavFiles.splice(fileIndex, 1);
