@@ -53,6 +53,14 @@ rm ffmpeg.tar.xz
 echo "FFmpeg setup complete. Binaries are in $(pwd)"
 ls -l # List contents to verify
 
+echo "--- Checking FFmpeg capabilities ---"
+echo "Available Muxers (looking for m4a/mp4/ipod):"
+./ffmpeg -muxers 2>&1 | grep -E 'm4a|mp4|ipod' || echo "No m4a/mp4/ipod muxer found."
+echo "Available Encoders (looking for aac):"
+./ffmpeg -encoders 2>&1 | grep aac || echo "No aac encoder found."
+echo "------------------------------------"
+
+
 cd .. # Go back to backend directory
 
 echo "--- FFmpeg setup finished ---"

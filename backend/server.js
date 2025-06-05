@@ -38,6 +38,11 @@ app.use(cors({
   }
 }));
 
+// Middleware to set default Content-Type for JSON responses
+app.use((req, res, next) => {
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  next();
+});
 
 // API Routes (should come before static serving and catch-all)
 app.use('/api/tool1', tool1Routes); // Use Tool1 routes
