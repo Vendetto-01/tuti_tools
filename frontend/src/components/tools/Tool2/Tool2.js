@@ -103,6 +103,38 @@ function Tool2() {
     }
   };
 
+  const handleDeleteFile = async (fileId, fileName) => {
+    // eslint-disable-next-line no-restricted-globals
+    if (!confirm(`Are you sure you want to delete "${fileName}"? This will remove the original uploaded file and any converted version.`)) {
+      return;
+    }
+
+    setIsLoading(true); // Use general loading state or a specific one for delete
+    setFetchError('');
+    try {
+      const apiUrl = process.env.REACT_APP_API_URL || '';
+      const response = await fetch(`${apiUrl}/api/tool2/delete-wav/${fileId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Failed to delete file ${fileName}.`);
+      }
+      // const data = await response.json(); // Contains success message
+      // console.log(data.message);
+      fetchUploadedWavs(); // Refresh the list after deletion
+      setConversionMessage(`File "${fileName}" marked for deletion.`); // Update general message
+      setConversionResults(prevResults => prevResults.filter(r => r.id !== fileId)); // Remove from current results if present
+    } catch (err) {
+      console.error('Error deleting file:', err);
+      setFetchError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+
   return (
     <div className="tool-container tool2-converter">
       <h2>Tool 2: Convert Uploaded WAVs to M4A</h2>
@@ -132,6 +164,14 @@ function Tool2() {
                   disabled={isLoading}
                 />
                 <label htmlFor={`wav-${file.id}`}>{file.originalName} ({(file.size / 1024 / 1024).toFixed(2)} MB)</label>
+                <button
+                  onClick={() => handleDeleteFile(file.id, file.originalName)}
+                  className="delete-file-button"
+                  disabled={isLoading}
+                  title="Delete this file"
+                >
+                  Delete
+                </button>
               </li>
             ))}
           </ul>

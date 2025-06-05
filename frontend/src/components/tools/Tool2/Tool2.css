@@ -83,7 +83,32 @@
   font-size: 0.95rem;
   color: #444;
   cursor: pointer;
+  flex-grow: 1; /* Allow label to take available space */
 }
+
+.file-item-selectable .delete-file-button {
+  padding: 5px 10px;
+  font-size: 0.85rem;
+  color: white;
+  background-color: #dc3545; /* Red for delete */
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  margin-left: 15px; /* Space it from the label */
+  white-space: nowrap;
+}
+
+.file-item-selectable .delete-file-button:hover:not(:disabled) {
+  background-color: #c82333;
+}
+
+.file-item-selectable .delete-file-button:disabled {
+  background-color: #e9ecef;
+  color: #6c757d;
+  cursor: not-allowed;
+}
+
 
 /* Reusing result styles from Tool1.css - these can be moved to a shared CSS file later */
 .results-section {

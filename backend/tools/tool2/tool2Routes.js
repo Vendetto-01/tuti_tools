@@ -133,5 +133,55 @@ module.exports = function(uploadedWavFiles) {
     }
   });
 
+  // DELETE route for removing an uploaded WAV file (and its conversion if exists)
+  router.delete('/delete-wav/:fileId', (req, res) => {
+    const { fileId } = req.params;
+    const fileIndex = uploadedWavFiles.findIndex(f => f.id === fileId);
+
+    if (fileIndex === -1) {
+      return res.status(404).json({ error: 'File not found in the list.' });
+    }
+
+    const fileData = uploadedWavFiles[fileIndex];
+    let originalFileDeleted = false;
+    let convertedFileDeleted = false;
+
+    // Attempt to delete the original uploaded file
+    if (fileData.serverPath && fs.existsSync(fileData.serverPath)) {
+      try {
+        fs.unlinkSync(fileData.serverPath);
+        console.log(`Deleted original uploaded file: ${fileData.serverPath}`);
+        originalFileDeleted = true;
+      } catch (err) {
+        console.error(`Error deleting original file ${fileData.serverPath}:`, err);
+        // Continue, as we still want to remove it from the list
+      }
+    } else {
+      console.log(`Original file path not found or already deleted: ${fileData.serverPath}`);
+      originalFileDeleted = true; // Consider it "deleted" if not found
+    }
+
+    // Attempt to delete the converted file if it exists
+    if (fileData.convertedFilePath && fs.existsSync(fileData.convertedFilePath)) {
+      try {
+        fs.unlinkSync(fileData.convertedFilePath);
+        console.log(`Deleted converted file: ${fileData.convertedFilePath}`);
+        convertedFileDeleted = true;
+      } catch (err) {
+        console.error(`Error deleting converted file ${fileData.convertedFilePath}:`, err);
+      }
+    } else if (fileData.status === 'converted') { // If status is converted but path is missing
+      console.log(`Converted file path not found or already deleted: ${fileData.convertedFilePath}`);
+      convertedFileDeleted = true; // Consider it "deleted"
+    }
+
+
+    // Remove from the in-memory array
+    uploadedWavFiles.splice(fileIndex, 1);
+    console.log(`Removed file ID ${fileId} from in-memory list. Remaining files:`, uploadedWavFiles.length);
+
+    res.json({ message: `File ${fileData.originalName} and its potential conversion have been processed for deletion.` });
+  });
+
   return router;
 };
