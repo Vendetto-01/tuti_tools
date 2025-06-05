@@ -24,7 +24,7 @@ function Tool2() {
       if (data.length === 0) {
         setConversionMessage('No WAV files found. Please upload files using Tool 1 first.');
       } else {
-        setConversionMessage('Select files to convert to MP4 audio format.');
+        setConversionMessage('Select files to convert to M4A format.');
       }
     } catch (err) {
       console.error('Error fetching uploaded WAVs:', err);
@@ -58,7 +58,7 @@ function Tool2() {
     }
 
     setIsLoading(true);
-    setConversionMessage(`Converting ${selectedFileIds.size} file(s) to MP4 audio format...`);
+    setConversionMessage(`Converting ${selectedFileIds.size} file(s) to M4A format...`);
     setConversionResults([]);
     setFetchError('');
 
@@ -75,7 +75,7 @@ function Tool2() {
       const resultsData = await response.json();
 
       if (response.ok) {
-        setConversionMessage('Conversion process complete. See results below.');
+        setConversionMessage('M4A conversion process complete. See results below.');
         setConversionResults(resultsData.map(result => ({
           ...result,
           downloadUrl: result.downloadUrl && result.downloadUrl.startsWith('http') ? result.downloadUrl : `${apiUrl}${result.downloadUrl}`
@@ -85,8 +85,8 @@ function Tool2() {
         setSelectedFileIds(new Set()); // Clear selection
       } else {
         const errorData = resultsData;
-        setFetchError(errorData.error || 'An unknown error occurred during conversion.');
-        setConversionMessage('Conversion failed.');
+        setFetchError(errorData.error || 'An unknown error occurred during M4A conversion.');
+        setConversionMessage('M4A conversion failed.');
          if (Array.isArray(resultsData)) {
             setConversionResults(resultsData.map(result => ({
                 ...result,
@@ -95,9 +95,9 @@ function Tool2() {
         }
       }
     } catch (err) {
-      console.error('Error converting files:', err);
+      console.error('Error converting files to M4A:', err);
       setFetchError('An error occurred while communicating with the server.');
-      setConversionMessage('Conversion failed.');
+      setConversionMessage('M4A conversion failed.');
     } finally {
       setIsLoading(false);
     }
@@ -134,9 +134,9 @@ function Tool2() {
 
   return (
     <div className="tool-container tool2-converter">
-      <h2>Tool 2: Convert Uploaded WAVs to MP4 Audio</h2>
+      <h2>Tool 2: Convert Uploaded WAVs to M4A</h2>
       <p className="tool-description">
-        Files uploaded via Tool 1 will appear here. Select files and convert them to MP4 audio format.
+        Files uploaded via Tool 1 will appear here. Select files and convert them to M4A audio format.
       </p>
 
       <button onClick={fetchUploadedWavs} disabled={isLoading} className="refresh-button">
@@ -177,7 +177,7 @@ function Tool2() {
             disabled={isLoading || selectedFileIds.size === 0} 
             className="convert-selected-button"
           >
-            {isLoading ? 'Converting...' : `Convert ${selectedFileIds.size} Selected File(s) to MP4`}
+            {isLoading ? 'Converting to M4A...' : `Convert ${selectedFileIds.size} Selected File(s) to M4A`}
           </button>
         </div>
       )}
@@ -186,16 +186,16 @@ function Tool2() {
       
       {conversionResults.length > 0 && (
         <div className="results-section">
-          <h3>Conversion Results:</h3>
+          <h3>M4A Conversion Results:</h3>
           <ul className="results-list">
             {conversionResults.map((result, index) => (
               <li key={result.id || index} className={`result-item ${result.status}`}>
                 <span className="file-name">{result.originalName}</span>
                 {result.status === 'success' ? (
                   <>
-                    <span className="status-text success">Converted to MP4</span>
+                    <span className="status-text success">Converted to M4A</span>
                     <a href={result.downloadUrl} download className="download-link-item">
-                      Download MP4
+                      Download M4A
                     </a>
                   </>
                 ) : (

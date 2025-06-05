@@ -59,36 +59,37 @@ module.exports = function(uploadedWavFiles) {
       }
 
       const inputFile = fileData.serverPath;
-      // MP4 formatını kullan (M4A yerine)
-      const outputFileName = `${path.parse(fileData.serverFileName).name}.mp4`;
+      // Artık gerçek M4A formatını kullanabiliriz
+      const outputFileName = `${path.parse(fileData.serverFileName).name}.m4a`;
       const outputPath = path.join(__dirname, '../../../converted/tool2_m4a');
       const outputFile = path.join(outputPath, outputFileName);
 
       fs.mkdirSync(outputPath, { recursive: true });
 
       const promise = new Promise((resolve) => {
-        console.log(`Starting conversion for (Tool2): ${fileData.originalName}`);
+        console.log(`Starting M4A conversion for (Tool2): ${fileData.originalName}`);
         
         ffmpeg(inputFile)
-          .toFormat('mp4') // M4A yerine MP4 kullan
+          .toFormat('ipod') // iPod formatını kullan (M4A oluşturur)
           .audioCodec('aac')
-          .audioBitrate('128k') // Bitrate ekle
-          .audioChannels(2) // Stereo
-          .audioFrequency(44100) // Sample rate
+          .audioBitrate('128k')
+          .audioChannels(2)
+          .audioFrequency(44100)
           .outputOptions([
             '-movflags', 'faststart', // Web için optimize et
-            '-strict', 'experimental' // AAC için gerekli olabilir
+            '-brand', 'M4A ', // M4A brand ekle
+            '-strict', 'experimental' // AAC için gerekli
           ])
           .on('start', (commandLine) => {
             console.log('FFmpeg command: ' + commandLine);
           })
           .on('progress', (progress) => {
             if (progress.percent) {
-              console.log(`Processing (Tool2) ${fileData.originalName}: ${progress.percent.toFixed(2)}% done`);
+              console.log(`Processing M4A (Tool2) ${fileData.originalName}: ${progress.percent.toFixed(2)}% done`);
             }
           })
           .on('end', () => {
-            console.log(`Conversion finished for (Tool2): ${fileData.originalName}`);
+            console.log(`M4A conversion finished for (Tool2): ${fileData.originalName}`);
             fileData.status = 'converted';
             fileData.convertedFileName = outputFileName;
             fileData.convertedFilePath = outputFile;
@@ -99,20 +100,20 @@ module.exports = function(uploadedWavFiles) {
               id: fileData.id,
               originalName: fileData.originalName,
               status: 'success',
-              message: 'File converted successfully!',
+              message: 'File converted successfully to M4A!',
               downloadUrl: fileData.downloadUrl
             });
             resolve();
           })
           .on('error', (err) => {
-            console.error(`Error during conversion for (Tool2) ${fileData.originalName}:`, err);
+            console.error(`Error during M4A conversion for (Tool2) ${fileData.originalName}:`, err);
             fileData.status = 'conversion_failed';
             fileData.conversionError = err.message;
             conversionResults.push({
               id: fileData.id,
               originalName: fileData.originalName,
               status: 'error',
-              error: 'Error during file conversion.',
+              error: 'Error during M4A file conversion.',
               details: err.message
             });
             resolve();
@@ -123,7 +124,7 @@ module.exports = function(uploadedWavFiles) {
     }
 
     await Promise.all(conversionPromises);
-    console.log('All selected conversions attempted. Current uploadedWavFiles:', uploadedWavFiles);
+    console.log('All selected M4A conversions attempted. Current uploadedWavFiles:', uploadedWavFiles);
     res.json(conversionResults);
   });
 
@@ -133,17 +134,17 @@ module.exports = function(uploadedWavFiles) {
     const filePath = path.join(__dirname, '../../../converted/tool2_m4a', filename);
 
     if (fs.existsSync(filePath)) {
-      // Content-Type'ı doğru ayarla
-      res.setHeader('Content-Type', 'audio/mp4');
+      // M4A için doğru Content-Type
+      res.setHeader('Content-Type', 'audio/mp4'); // M4A aslında audio/mp4 MIME type kullanır
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       
       res.download(filePath, filename, (err) => {
         if (err) {
-          console.error('Error downloading file (Tool2):', err);
+          console.error('Error downloading M4A file (Tool2):', err);
         }
       });
     } else {
-      res.status(404).json({ error: 'File not found (Tool2).' });
+      res.status(404).json({ error: 'M4A file not found (Tool2).' });
     }
   });
 
@@ -172,9 +173,9 @@ module.exports = function(uploadedWavFiles) {
     if (fileData.convertedFilePath && fs.existsSync(fileData.convertedFilePath)) {
       try {
         fs.unlinkSync(fileData.convertedFilePath);
-        console.log(`Deleted converted file: ${fileData.convertedFilePath}`);
+        console.log(`Deleted converted M4A file: ${fileData.convertedFilePath}`);
       } catch (err) {
-        console.error(`Error deleting converted file ${fileData.convertedFilePath}:`, err);
+        console.error(`Error deleting converted M4A file ${fileData.convertedFilePath}:`, err);
       }
     }
 
@@ -182,7 +183,7 @@ module.exports = function(uploadedWavFiles) {
     uploadedWavFiles.splice(fileIndex, 1);
     console.log(`Removed file ID ${fileId} from in-memory list. Remaining files:`, uploadedWavFiles.length);
 
-    res.json({ message: `File ${fileData.originalName} and its potential conversion have been processed for deletion.` });
+    res.json({ message: `File ${fileData.originalName} and its potential M4A conversion have been processed for deletion.` });
   });
 
   return router;
