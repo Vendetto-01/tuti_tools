@@ -1,14 +1,11 @@
 import React from 'react';
 // import './Tool3.css'; // Original CSS, styles now part of Tool1Page or global
 
-const Tool2 = () => { // This component was used as "Tool 3 (Convert/Manage)"
+const Tool2 = () => {
   return (
-    <div className="tool-placeholder-card tool-card-legacy">
-      <h3>Tool 3 Module (Legacy - Convert/Manage)</h3>
-      <p>
-        M4A conversion and file management have been moved to the consolidated 
-        <strong>Tool Operations Hub</strong>.
-      </p>
+    <div className="tool-placeholder-card">
+      <h3>Tool 2</h3>
+      <p>This is a placeholder for future Tool 2 functionality.</p>
     </div>
   );
 };

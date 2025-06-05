@@ -269,7 +269,7 @@ const Tool1Page = () => {
   // --- End of CONVERT/MANAGE (from Tool2.js) State & Handlers ---
 
   return (
-    <div className="tool-page-container theme-tech-neon"> {/* Added theme class */}
+    <div className="tool-page-container"> {/* Removed theme-tech-neon, styles now from App.css */}
       <header className="App-header"> {/* Consider a Layout component for repeated structures */}
         <h1>Tool 1</h1> {/* Renamed */}
         <nav>
