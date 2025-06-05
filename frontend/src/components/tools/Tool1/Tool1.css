@@ -1,0 +1,146 @@
+.tool-container {
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 25px;
+  text-align: center;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 150px; /* Ensure cards have a minimum height */
+}
+
+.tool-container:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+.tool-container h2 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #333;
+  font-size: 1.5rem;
+}
+
+.tool-container p {
+  font-size: 0.95rem;
+  color: #666;
+  flex-grow: 1; /* Allow paragraph to take available space */
+}
+
+.tool1-converter .tool-description {
+  font-size: 1rem;
+  color: #555;
+  margin-bottom: 25px;
+}
+
+.file-input-container {
+  margin-bottom: 20px;
+  position: relative;
+  display: inline-block; /* Or block, depending on desired layout */
+}
+
+/* Hide the default file input */
+.file-input-container input[type="file"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+.file-input-label {
+  display: inline-block;
+  padding: 10px 20px;
+  font-size: 1rem;
+  color: #fff;
+  background-color: #4b6cb7; /* Button color */
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.file-input-label:hover {
+  background-color: #3a559f; /* Darker shade on hover */
+}
+
+.convert-button {
+  padding: 12px 25px;
+  font-size: 1.1rem;
+  color: white;
+  background-color: #27ae60; /* Green for primary action */
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  margin-bottom: 20px;
+}
+
+.convert-button:hover:not(:disabled) {
+  background-color: #229954;
+}
+
+.convert-button:disabled {
+  background-color: #bdc3c7;
+  cursor: not-allowed;
+}
+
+.status-message {
+  margin-top: 15px;
+  padding: 10px;
+  border-radius: 6px;
+  font-size: 0.95rem;
+}
+
+.status-message.loading {
+  background-color: #eaf2f8;
+  color: #3498db;
+  border: 1px solid #aed6f1;
+}
+
+.status-message.success {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid #a5d6a7;
+}
+
+.status-message.error {
+  background-color: #fdecea;
+  color: #c62828;
+  border: 1px solid #ef9a9a;
+}
+
+.download-section {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #f0f9eb; /* Light green background */
+  border: 1px solid #c8e6c9;
+  border-radius: 8px;
+}
+
+.download-section p {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #388e3c; /* Darker green text */
+  font-weight: bold;
+}
+
+.download-link {
+  display: inline-block;
+  padding: 10px 20px;
+  background-color: #4caf50; /* Green download button */
+  color: white;
+  text-decoration: none;
+  border-radius: 6px;
+  font-weight: bold;
+  transition: background-color 0.2s ease;
+}
+
+.download-link:hover {
+  background-color: #43a047; /* Darker green on hover */
+}
