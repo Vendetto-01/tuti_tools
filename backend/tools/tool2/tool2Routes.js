@@ -46,7 +46,9 @@ module.exports = function(uploadedWavFiles) {
     const currentServerExt = path.extname(oldServerFileName); // Extension of the actual file on disk (e.g., .m4a)
 
     // Determine the target base name by applying the hyphen rule to fileData.trueOriginalName (or fallback to originalName)
+    console.log(`[Rename ID: ${fileId}] Original fileData:`, JSON.stringify(fileData, null, 2));
     const nameToProcess = fileData.trueOriginalName || fileData.originalName;
+    console.log(`[Rename ID: ${fileId}] Name to process for base: ${nameToProcess}`);
     if (!nameToProcess) {
         // This case should ideally not happen if Tool1 always provides at least originalName
         console.error(`File ID ${fileData.id} is missing 'trueOriginalName' and 'originalName'.`);
@@ -63,11 +65,13 @@ module.exports = function(uploadedWavFiles) {
     }
 
     // Construct the full new target server filename using the derived targetBaseName and the actual currentServerExt
-    const newTargetServerFileName = `${targetBaseName}${currentServerExt}`; // e.g., "audioSüleymanÖzcan21973377903.m4a"
-
+    const newTargetServerFileName = `${targetBaseName}${currentServerExt}`;
+    console.log(`[Rename ID: ${fileId}] Initial target server filename: ${newTargetServerFileName}`);
+    
     // If the newly constructed target server filename is identical to the current server filename,
     // then no physical rename operation is needed.
     if (newTargetServerFileName === oldServerFileName) {
+      console.log(`[Rename ID: ${fileId}] File '${oldServerFileName}' already matches target. No rename needed.`);
       return res.status(200).json({
         message: `File '${oldServerFileName}' already matches the target naming convention derived from '${nameToProcess}'. No rename performed.`,
         updatedFile: {
@@ -82,34 +86,32 @@ module.exports = function(uploadedWavFiles) {
     }
 
     // Proceed with rename using the new target server filename
-    const newServerFileName = newTargetServerFileName;
-    const newServerPath = path.join(dirName, newServerFileName);
+    let newServerFileName = newTargetServerFileName; // Use let as it might be changed by conflict resolution
+    let newServerPath = path.join(dirName, newServerFileName); // Use let
+    console.log(`[Rename ID: ${fileId}] Initial newServerPath for rename: ${newServerPath}`);
 
-    // Check if a file with the new name already exists (optional, but good practice)
+    // Check if a file with the new name already exists
     if (fs.existsSync(newServerPath)) {
-        console.warn(`Initial target name ${newServerPath} already exists. Attempting to generate a unique name.`);
+        console.warn(`[Rename ID: ${fileId}] Conflict: Target path ${newServerPath} already exists.`);
         const uniqueSuffix = uuidv4().substring(0, 4);
-        // Use targetBaseName (derived from trueOriginalName) and currentServerExt for conflict resolution
         const conflictResolvedBase = `${targetBaseName}_${uniqueSuffix}`;
         const conflictResolvedFileName = `${conflictResolvedBase}${currentServerExt}`;
-        const conflictResolvedPath = path.join(dirName, conflictResolvedFileName);
-
-        console.warn(`Attempting rename with unique name: ${conflictResolvedPath}`);
         
-        // Update newServerFileName and newServerPath to use the conflict-resolved names
-        newServerFileName = conflictResolvedFileName;
-        newServerPath = conflictResolvedPath;
+        newServerFileName = conflictResolvedFileName; // Update newServerFileName
+        newServerPath = path.join(dirName, newServerFileName); // Update newServerPath based on the new newServerFileName
 
-        // It's still possible (though highly unlikely with UUID) that the conflictResolvedPath also exists.
-        // For simplicity, we're not adding a loop here, but in a production system, you might.
-        // If fs.renameSync fails below due to this, it will be caught by the catch block.
+        console.warn(`[Rename ID: ${fileId}] Conflict resolved. New target path: ${newServerPath}`);
+    } else {
+        console.log(`[Rename ID: ${fileId}] No conflict for ${newServerPath}. Proceeding with this path.`);
     }
     
     try {
+      console.log(`[Rename ID: ${fileId}] Attempting fs.renameSync from '${oldServerPath}' to '${newServerPath}'`);
       fs.renameSync(oldServerPath, newServerPath);
-      console.log(`File renamed: ${oldServerPath} -> ${newServerPath}`);
+      console.log(`[Rename ID: ${fileId}] Successfully renamed: ${oldServerPath} -> ${newServerPath}`);
 
       // Update the fileData in the in-memory store
+      console.log(`[Rename ID: ${fileId}] Updating fileData.serverFileName to: ${newServerFileName}`);
       fileData.serverFileName = newServerFileName;
       fileData.serverPath = newServerPath;
       fileData.status = 'renamed'; // New status

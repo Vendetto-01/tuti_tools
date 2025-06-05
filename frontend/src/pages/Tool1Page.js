@@ -4,7 +4,8 @@ import { Link } from 'react-router-dom';
 // import Tool1Component from '../components/tools/Tool1/Tool1';
 // We will later integrate Tool3.js (Rename) and Tool2.js (Convert/Manage) functionalities here
 // import './Tool1Page.css'; // We can create a dedicated CSS file later if needed
-// import '../components/tools/Tool1/Tool1.css'; // Import styles from original Tool1
+// CSS imports for original Tool1, Tool2 (Tool3.css), Tool3 (Tool2.css) are removed
+// as styling is now handled by App.css and classes within this component.
 
 const Tool1Page = () => {
   // --- Start of UPLOAD (from Tool1.js) State & Handlers ---

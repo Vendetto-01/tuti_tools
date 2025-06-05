@@ -1,5 +1,5 @@
 import React from 'react';
-import './Tool4.css';
+// import './Tool4.css'; // Styling now handled by App.css via .tool-container
 
 function Tool4() {
   return (
