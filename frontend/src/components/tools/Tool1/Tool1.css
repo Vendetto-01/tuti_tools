@@ -144,3 +144,86 @@
 .download-link:hover {
   background-color: #43a047; /* Darker green on hover */
 }
+
+/* Styles for multiple file results */
+.results-section {
+  margin-top: 30px;
+  text-align: left;
+  border-top: 1px solid #eee;
+  padding-top: 20px;
+}
+
+.results-section h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 1.3rem;
+  color: #333;
+  text-align: center;
+}
+
+.results-list {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.result-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 15px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  background-color: #f9f9f9;
+}
+
+.result-item .file-name {
+  font-weight: 500;
+  color: #444;
+  margin-right: 15px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-grow: 1;
+}
+
+.result-item .status-text {
+  font-size: 0.9rem;
+  padding: 5px 10px;
+  border-radius: 4px;
+  margin-right: 10px;
+}
+
+.result-item .status-text.success {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.result-item .status-text.error {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.download-link-item {
+  display: inline-block;
+  padding: 6px 12px;
+  background-color: #007bff; /* Blue download button */
+  color: white;
+  text-decoration: none;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+  white-space: nowrap;
+}
+
+.download-link-item:hover {
+  background-color: #0056b3;
+}
+
+.status-message.info { /* For overall messages that are not errors or specific success */
+  background-color: #e2e3e5;
+  color: #383d41;
+  border: 1px solid #d6d8db;
+}
