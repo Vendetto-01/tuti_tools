@@ -1,31 +1,130 @@
-.tool-container {
-  background-color: #ffffff;
+/* Assuming .tool-container base styles are available or inherited */
+
+.tool-container.tool3-manager {
+  /* Tool3 specific container adjustments if any */
+}
+
+.tool3-manager .tool-description {
+  font-size: 1rem;
+  color: #555;
+  margin-bottom: 20px;
+}
+
+.tool3-manager .refresh-button { /* Can share with Tool2's refresh button if identical */
+  padding: 10px 20px;
+  font-size: 1rem;
+  color: white;
+  background-color: #007bff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  margin-bottom: 20px;
+}
+
+.tool3-manager .refresh-button:hover:not(:disabled) {
+  background-color: #0056b3;
+}
+
+.tool3-manager .refresh-button:disabled {
+  background-color: #bdc3c7;
+  cursor: not-allowed;
+}
+
+.converted-files-list {
+  margin-top: 20px;
+  text-align: left;
+}
+
+.converted-files-list h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 1.2rem;
+  color: #333;
+}
+
+.converted-files-list ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.file-item-converted {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 15px;
   border: 1px solid #e0e0e0;
-  border-radius: 12px;
-  padding: 25px;
-  text-align: center;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  background-color: #f9f9f9;
+}
+
+.file-item-converted .file-info {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  min-height: 150px; /* Ensure cards have a minimum height */
+  flex-grow: 1;
+  margin-right: 15px;
 }
 
-.tool-container:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+.file-item-converted .original-name {
+  font-size: 0.85rem;
+  color: #777;
+  margin-bottom: 3px;
 }
 
-.tool-container h2 {
-  margin-top: 0;
-  margin-bottom: 10px;
+.file-item-converted .converted-name {
+  font-weight: 500;
   color: #333;
-  font-size: 1.5rem;
+  font-size: 1rem;
 }
 
-.tool-container p {
-  font-size: 0.95rem;
-  color: #666;
-  flex-grow: 1; /* Allow paragraph to take available space */
+.file-item-converted .file-actions {
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
 }
+
+.file-item-converted .download-link-item { /* Can share with Tool2's download link item */
+  display: inline-block;
+  padding: 6px 12px;
+  background-color: #28a745;
+  color: white;
+  text-decoration: none;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+  margin-right: 10px; /* Space before rename button */
+}
+
+.file-item-converted .download-link-item:hover {
+  background-color: #218838;
+}
+
+.file-item-converted .rename-button {
+  padding: 6px 12px;
+  font-size: 0.9rem;
+  color: white;
+  background-color: #ffc107; /* Yellow for rename/edit */
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.file-item-converted .rename-button:hover:not(:disabled) {
+  background-color: #e0a800;
+}
+
+.file-item-converted .rename-button:disabled {
+  background-color: #e9ecef;
+  color: #6c757d;
+  cursor: not-allowed;
+}
+
+/* Status messages (can also be shared from a common CSS or Tool1/Tool2.css) */
+.status-message { margin-top: 15px; padding: 10px; border-radius: 6px; font-size: 0.95rem; }
+.status-message.loading { background-color: #eaf2f8; color: #3498db; border: 1px solid #aed6f1; }
+.status-message.error { background-color: #fdecea; color: #c62828; border: 1px solid #ef9a9a; }
+.status-message.info { background-color: #e2e3e5; color: #383d41; border: 1px solid #d6d8db; }
