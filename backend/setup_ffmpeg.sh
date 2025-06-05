@@ -1,13 +1,13 @@
 #!/bin/bash
 set -e # Exit immediately if a command exits with a non-zero status.
 
-FFMPEG_VERSION="6.0" # Or choose a specific version like 6.0, 5.1.2 etc.
+FFMPEG_VERSION="7.0.2" # Updated to match the downloaded version
 FFMPEG_TARBALL_URL="https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz"
 # Fallback URL if the above changes, you might need to find a new one.
-# FFMPEG_TARBALL_URL_ALT="https://www.johnvansickle.com/ffmpeg/old-releases/ffmpeg-6.0-amd64-static.tar.xz"
+# FFMPEG_TARBALL_URL_ALT="https://www.johnvansickle.com/ffmpeg/old-releases/ffmpeg-7.0.2-amd64-static.tar.xz" # Example if needed
 
 BIN_DIR="./bin"
-FFMPEG_DIR_NAME="ffmpeg-${FFMPEG_VERSION}-amd64-static" # This is usually the directory name inside the tarball
+FFMPEG_DIR_NAME="ffmpeg-${FFMPEG_VERSION}-amd64-static" # This should now correctly be ffmpeg-7.0.2-amd64-static
 
 echo "--- Setting up FFmpeg ---"
 
