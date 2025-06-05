@@ -201,7 +201,7 @@ const sanitizeFilename = (name) => {
   // GET route for downloading the converted file (from Tool2)
   router.get('/download/:filename', (req, res) => {
     const filename = req.params.filename;
-    const filePath = path.join(__dirname, '../../../converted/tool2_m4a', filename);
+    const filePath = path.resolve(__dirname, '../../converted/tool2_m4a', filename);
 
     if (fs.existsSync(filePath)) {
       // M4A için doğru Content-Type
