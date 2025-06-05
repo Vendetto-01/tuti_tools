@@ -591,7 +591,7 @@ const Tool1Page = () => {
         </section>
       </main>
       <footer className="App-footer">
-        <p>&copy; 2025 Tuti Tools - Tool 1</p> {/* Renamed */}
+        <p>&copy; 2025 Tuti Tools - Xylogasm Multifart Conversplosion</p> {/* Renamed */}
       </footer>
     </div>
   );

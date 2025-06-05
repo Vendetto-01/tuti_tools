@@ -19,16 +19,16 @@ const HomePage = () => (
       <h1>Welcome to Tuti Tools</h1>
       <p>
         Primary functionalities (Upload, Rename, Convert/Manage) are consolidated
-        into "Tool 1". Click the link above to access it.
+        into "Xylogasm Multifart Conversplosion". Access it below.
       </p>
       <p>
         Other tools are available below:
       </p>
       <div className="tools-grid">
         <div className="tool-placeholder-card"> {/* Card for Tool 1 link */}
-          <h3>Tool 1</h3>
+          <h3>Xylogasm Multifart Conversplosion</h3>
           <p>Upload, Rename, Convert, and Manage files.</p>
-          <Link to="/tool1" className="tool-link-button-small">Go to Tool 1</Link>
+          <Link to="/tool1" className="tool-link-button-small">Go to Xylogasm Multifart Conversplosion</Link>
         </div>
         <Tool2 /> {/* Placeholder for future Tool 2 */}
         <Tool3 /> {/* Placeholder for future Tool 3 */}
