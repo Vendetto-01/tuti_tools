@@ -211,9 +211,13 @@ const sanitizeFilename = (name) => {
       res.download(filePath, filename, (err) => {
         if (err) {
           console.error('Error downloading M4A file (Tool2):', err);
+          if (!res.headersSent) {
+            res.status(500).json({ error: 'Error downloading file' });
+          }
         }
       });
     } else {
+      console.log(`File not found at path: ${filePath}`); // Debug için
       res.status(404).json({ error: 'M4A file not found (Tool2).' });
     }
   });
