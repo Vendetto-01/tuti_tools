@@ -1,5 +1,6 @@
 const express = require('express');
 const path = require('path');
+const cors = require('cors'); // Import cors
 const tool1Routes = require('./tools/tool1/tool1Routes'); // Import Tool1 routes
 
 const app = express();
@@ -9,6 +10,25 @@ const port = process.env.PORT || 3001; // Backend server port
 app.use(express.json());
 // Middleware for parsing URL-encoded bodies (if forms submit directly to backend)
 app.use(express.urlencoded({ extended: true }));
+
+// CORS Configuration
+const allowedOrigins = ['https://tuti-tools.onrender.com'];
+if (process.env.NODE_ENV !== 'production') {
+  // Allow localhost for development
+  allowedOrigins.push('http://localhost:3000'); // Assuming frontend runs on 3000 locally
+}
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  }
+}));
 
 
 // Serve static files from the React frontend app
