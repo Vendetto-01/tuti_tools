@@ -19,8 +19,12 @@ module.exports = function(uploadedWavFiles) {
       cb(null, uploadPath);
     },
     filename: (req, file, cb) => {
-      // Keep original extension for now, conversion handles new extension
-      cb(null, `${Date.now()}-${uuidv4()}-${file.originalname.replace(/\s+/g, '_')}`);
+      // Sanitize originalname for use in server filename
+      // Replace spaces with underscores, then replace non-alphanumeric (excluding dot and hyphen) with underscore
+      const sanitizedOriginalName = file.originalname
+        .replace(/\s+/g, '_')
+        .replace(/[^a-zA-Z0-9._-]/g, '_');
+      cb(null, `${Date.now()}-${uuidv4()}-${sanitizedOriginalName}`);
     }
   });
 

@@ -65,7 +65,7 @@ module.exports = function(uploadedWavFiles) {
         console.log(`Starting conversion for (Tool2): ${fileData.originalName}`);
         ffmpeg(inputFile)
           .toFormat('m4a')
-          // .audioCodec('aac') // Temporarily commented out for testing M4A container support
+          .audioCodec('aac') // Re-enabled AAC codec
           .on('progress', (progress) => {
             if (progress.percent) {
               console.log(`Processing (Tool2) ${fileData.originalName}: ${progress.percent.toFixed(2)}% done`);
