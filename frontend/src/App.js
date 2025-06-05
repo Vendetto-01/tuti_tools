@@ -9,7 +9,7 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <h1>My Web Application - Tool Hub</h1>
+        <h1>Tuti Tools</h1>
       </header>
       <main className="App-main">
         <h1>Available Tools</h1>
@@ -23,7 +23,7 @@ function App() {
         </div>
       </main>
       <footer className="App-footer">
-        <p>&copy; 2025 My Web Application</p>
+        <p>&copy; 2025 Tuti Tools</p>
       </footer>
     </div>
   );
