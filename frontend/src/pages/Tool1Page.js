@@ -72,10 +72,11 @@ const Tool1Page = () => {
   // --- End of UPLOAD (from Tool1.js) State & Handlers ---
 
   // --- Start of RENAME (from Tool3.js) State & Handlers ---
-  const [filesForRename, setFilesForRename] = useState([]); // Renamed from originalWavs
-  const [isRenameLoading, setIsRenameLoading] = useState(false); // Renamed from isLoading
-  const [renameFetchError, setRenameFetchError] = useState(''); // Renamed from fetchError
-  const [renameUserMessage, setRenameUserMessage] = useState(''); // Renamed from renameMessage
+  const [filesForRename, setFilesForRename] = useState([]);
+  const [selectedFileIdsForRename, setSelectedFileIdsForRename] = useState(new Set()); // New state for selected files for rename
+  const [isRenameLoading, setIsRenameLoading] = useState(false);
+  const [renameFetchError, setRenameFetchError] = useState('');
+  const [renameUserMessage, setRenameUserMessage] = useState('');
 
   const fetchFilesForRename = useCallback(async () => {
     setIsRenameLoading(true);
@@ -107,42 +108,75 @@ const Tool1Page = () => {
     fetchFilesForRename();
   }, [fetchFilesForRename]);
 
-  const handleRenameFile = async (fileId, currentName) => {
-    // eslint-disable-next-line no-restricted-globals
-    if (!confirm(`Are you sure you want to rename "${currentName}"?\nThis will apply the configured renaming rule.`)) {
+  const handleRenameFileSelectionChange = (fileId) => {
+    setSelectedFileIdsForRename(prevSelected => {
+      const newSelected = new Set(prevSelected);
+      if (newSelected.has(fileId)) {
+        newSelected.delete(fileId);
+      } else {
+        newSelected.add(fileId);
+      }
+      return newSelected;
+    });
+  };
+
+  const handleSelectAllForRename = (event) => {
+    if (event.target.checked) {
+      const allFileIds = new Set(filesForRename.map(f => f.id));
+      setSelectedFileIdsForRename(allFileIds);
+    } else {
+      setSelectedFileIdsForRename(new Set());
+    }
+  };
+  
+  const processRenameSelectedFiles = async () => {
+    if (selectedFileIdsForRename.size === 0) {
+      setRenameUserMessage("Please select files to rename.");
       return;
     }
 
     setIsRenameLoading(true);
     setRenameFetchError('');
-    setRenameUserMessage(`Renaming ${currentName}...`);
-    try {
-      const apiUrl = process.env.REACT_APP_API_URL || '';
-      const response = await fetch(`${apiUrl}/api/tool2/rename-wav/${fileId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+    let successCount = 0;
+    let errorCount = 0;
+    const totalToProcess = selectedFileIdsForRename.size;
+    setRenameUserMessage(`Starting batch rename for ${totalToProcess} file(s)...`);
 
-      const resultData = await response.json();
+    for (const fileId of selectedFileIdsForRename) {
+      const fileToRename = filesForRename.find(f => f.id === fileId);
+      if (!fileToRename) continue;
 
-      if (response.ok) {
-        setRenameUserMessage(resultData.message || `File ${currentName} processed for renaming.`);
-        fetchFilesForRename(); // Refresh the list
-        fetchFilesForConversion(); // Refresh conversion list after successful rename
-      } else {
-        setRenameFetchError(resultData.error || 'An unknown error occurred during renaming.');
-        setRenameUserMessage(`Failed to rename ${currentName}.`);
+      try {
+        setRenameUserMessage(`Renaming ${fileToRename.serverFileName} (${successCount + errorCount + 1}/${totalToProcess})...`);
+        const apiUrl = process.env.REACT_APP_API_URL || '';
+        const response = await fetch(`${apiUrl}/api/tool2/rename-wav/${fileId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        const resultData = await response.json();
+        if (response.ok) {
+          successCount++;
+        } else {
+          errorCount++;
+          console.error(`Failed to rename ${fileToRename.serverFileName}: ${resultData.error}`);
+          // Optionally, accumulate errors to show user
+        }
+      } catch (err) {
+        errorCount++;
+        console.error(`Error renaming ${fileToRename.serverFileName}:`, err);
+        // Optionally, accumulate errors
       }
-    } catch (err) {
-      console.error('Error renaming file:', err);
-      setRenameFetchError('An error occurred while communicating with the server for renaming.');
-      setRenameUserMessage(`Failed to rename ${currentName}.`);
-    } finally {
-      setIsRenameLoading(false);
     }
+
+    setRenameUserMessage(`Batch rename complete. Success: ${successCount}, Failed: ${errorCount}.`);
+    fetchFilesForRename(); // Refresh this list
+    fetchFilesForConversion(); // Refresh next list
+    setSelectedFileIdsForRename(new Set()); // Clear selection
+    setIsRenameLoading(false);
   };
+
+  // Note: The individual handleRenameFile function is removed as batch processing is primary.
+  // If individual rename buttons per item are desired, they would call a similar single-item process or add to selection and call batch.
   // --- End of RENAME (from Tool3.js) State & Handlers ---
 
   // --- Start of CONVERT/MANAGE (from Tool2.js) State & Handlers ---
@@ -193,6 +227,16 @@ const Tool1Page = () => {
       }
       return newSelected;
     });
+  };
+
+  const handleSelectAllForConversion = (event) => {
+    if (event.target.checked) {
+      // Select only files that are not already converted or in a non-actionable state, if applicable
+      const allFileIds = new Set(filesForConversion.filter(f => f.status !== 'converted_m4a' /* Add other conditions if needed */).map(f => f.id));
+      setSelectedFileIdsForConversion(allFileIds);
+    } else {
+      setSelectedFileIdsForConversion(new Set());
+    }
   };
 
   const handleConvertSelectedFiles = async () => {
@@ -344,26 +388,51 @@ const Tool1Page = () => {
             {!isRenameLoading && filesForRename.length > 0 && (
               <div className="files-to-rename-list">
                 <h3>Available Files for Renaming:</h3>
+                <div className="batch-actions">
+                  <input
+                    type="checkbox"
+                    id="selectAllRename"
+                    onChange={handleSelectAllForRename}
+                    checked={selectedFileIdsForRename.size === filesForRename.length && filesForRename.length > 0}
+                    disabled={isRenameLoading}
+                  />
+                  <label htmlFor="selectAllRename" style={{ marginRight: '10px' }}>Select All</label>
+                  <button
+                    onClick={processRenameSelectedFiles}
+                    disabled={isRenameLoading || selectedFileIdsForRename.size === 0}
+                    className="batch-rename-button"
+                  >
+                    Rename Selected ({selectedFileIdsForRename.size})
+                  </button>
+                </div>
                 <ul>
                   {filesForRename.map(file => (
-                    <li key={file.id} className="file-item-actionable">
-                      <span className="file-name-display">
+                    <li key={file.id} className="file-item-selectable"> {/* Changed class */}
+                      <input
+                        type="checkbox"
+                        id={`rename-${file.id}`}
+                        checked={selectedFileIdsForRename.has(file.id)}
+                        onChange={() => handleRenameFileSelectionChange(file.id)}
+                        disabled={isRenameLoading}
+                      />
+                      <label htmlFor={`rename-${file.id}`} className="file-name-display">
                         {file.trueOriginalName || file.originalName} (Server: {file.serverFileName}) - {((file.size || 0) / 1024 / 1024).toFixed(2)} MB
-                      </span>
-                      <button
-                        onClick={() => handleRenameFile(file.id, file.serverFileName)}
+                      </label>
+                      {/* Individual rename button can be kept or removed if batch is preferred */}
+                      {/* <button
+                        onClick={() => handleRenameFile(file.id, file.serverFileName)} // This would need to be adapted or use the batch process for one
                         className="rename-button"
                         disabled={isRenameLoading}
                         title={`Rename ${file.serverFileName}`}
                       >
                         Rename
-                      </button>
+                      </button> */}
                     </li>
                   ))}
                 </ul>
               </div>
             )}
-            {renameUserMessage && <p className={`status-message ${renameFetchError ? 'error' : 'info'}`}>{renameUserMessage}</p>}
+            {renameUserMessage && <p className={`status-message ${renameFetchError ? 'error' : (isRenameLoading ? 'loading' : 'info')}`}>{renameUserMessage}</p>}
           </div>
           {/* --- End of RENAME (from Tool3.js) JSX --- */}
         </section>
@@ -386,6 +455,29 @@ const Tool1Page = () => {
             {!isConvertLoading && filesForConversion.length > 0 && (
               <div className="uploaded-files-list">
                 <h3>Available Files for M4A Conversion/Management:</h3>
+                <div className="batch-actions" style={{ marginBottom: '15px', display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <input
+                    type="checkbox"
+                    id="selectAllConvert"
+                    onChange={handleSelectAllForConversion}
+                    checked={selectedFileIdsForConversion.size === filesForConversion.filter(f => f.status !== 'converted_m4a').length && filesForConversion.filter(f => f.status !== 'converted_m4a').length > 0}
+                    disabled={isConvertLoading}
+                    style={{ marginRight: '5px', verticalAlign: 'middle' }}
+                  />
+                  <label htmlFor="selectAllConvert" style={{ marginRight: '20px', verticalAlign: 'middle', cursor: 'pointer' }}>Select All Convertible</label>
+                  <button
+                    onClick={handleConvertSelectedFiles}
+                    disabled={isConvertLoading || selectedFileIdsForConversion.size === 0}
+                    className="convert-selected-button"
+                    style={{ marginRight: '10px' }}
+                  >
+                    Convert Selected ({selectedFileIdsForConversion.size})
+                  </button>
+                  {/* Future: Add Batch Delete Button if needed */}
+                  {/* <button onClick={handleDeleteSelectedFiles} disabled={isConvertLoading || selectedFileIdsForConversion.size === 0} className="batch-delete-button">
+                    Delete Selected ({selectedFileIdsForConversion.size})
+                  </button> */}
+                </div>
                 <ul>
                   {filesForConversion.map(file => (
                     <li key={file.id} className="file-item-selectable">
@@ -394,9 +486,10 @@ const Tool1Page = () => {
                         id={`convert-wav-${file.id}`}
                         checked={selectedFileIdsForConversion.has(file.id)}
                         onChange={() => handleConversionFileSelectionChange(file.id)}
-                        disabled={isConvertLoading || file.status === 'converted_m4a'}
+                        disabled={isConvertLoading || file.status === 'converted_m4a'} // Keep disabled if already converted
+                        style={{ marginRight: '10px', verticalAlign: 'middle' }}
                       />
-                      <label htmlFor={`convert-wav-${file.id}`}>
+                      <label htmlFor={`convert-wav-${file.id}`} style={{ verticalAlign: 'middle', cursor: 'pointer', flexGrow: 1 }}>
                         {file.serverFileName || file.originalName} (Original: {file.trueOriginalName || file.originalName}) - {((file.size || 0) / 1024 / 1024).toFixed(2)} MB
                         {file.status && ` - Status: ${file.status}`}
                       </label>
@@ -411,13 +504,7 @@ const Tool1Page = () => {
                     </li>
                   ))}
                 </ul>
-                <button
-                  onClick={handleConvertSelectedFiles}
-                  disabled={isConvertLoading || selectedFileIdsForConversion.size === 0}
-                  className="convert-selected-button"
-                >
-                  {isConvertLoading ? 'Converting...' : `Convert ${selectedFileIdsForConversion.size} Selected to M4A`}
-                </button>
+                {/* Convert button moved to batch actions div */}
               </div>
             )}
 
