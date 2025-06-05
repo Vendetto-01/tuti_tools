@@ -87,21 +87,22 @@ module.exports = function(uploadedWavFiles) {
 
     // Check if a file with the new name already exists (optional, but good practice)
     if (fs.existsSync(newServerPath)) {
-        // Attempt to avoid conflict by adding a unique suffix if '...a.wav' already exists
-        // This is a simple conflict resolution. More robust might be needed.
-        const uniqueSuffix = uuidv4().substring(0,4);
-        const conflictResolvedBaseName = `${newBaseNameWithoutExt}_${uniqueSuffix}`;
-        const conflictResolvedFileName = `${conflictResolvedBaseName}${ext}`;
+        console.warn(`Initial target name ${newServerPath} already exists. Attempting to generate a unique name.`);
+        const uniqueSuffix = uuidv4().substring(0, 4);
+        // Use targetBaseName (derived from trueOriginalName) and currentServerExt for conflict resolution
+        const conflictResolvedBase = `${targetBaseName}_${uniqueSuffix}`;
+        const conflictResolvedFileName = `${conflictResolvedBase}${currentServerExt}`;
         const conflictResolvedPath = path.join(dirName, conflictResolvedFileName);
+
+        console.warn(`Attempting rename with unique name: ${conflictResolvedPath}`);
         
-        console.warn(`Rename conflict: ${newServerPath} already exists. Trying ${conflictResolvedPath}`);
-        // For this example, we'll proceed with the uniquely suffixed name if the simple 'a' version exists.
-        // However, the primary request is just to append 'a'. If strict adherence is needed,
-        // this block should error out or have different logic.
-        // For now, let's assume the user wants '...a.wav'. If that exists, it's an issue.
-        // Let's simplify and assume the target '...a.wav' won't exist or we overwrite.
-        // For safety, we should error if the direct target exists.
-         return res.status(409).json({ error: `A file named '${newServerFileName}' already exists. Cannot rename.` });
+        // Update newServerFileName and newServerPath to use the conflict-resolved names
+        newServerFileName = conflictResolvedFileName;
+        newServerPath = conflictResolvedPath;
+
+        // It's still possible (though highly unlikely with UUID) that the conflictResolvedPath also exists.
+        // For simplicity, we're not adding a loop here, but in a production system, you might.
+        // If fs.renameSync fails below due to this, it will be caught by the catch block.
     }
     
     try {
