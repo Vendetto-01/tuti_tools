@@ -6,6 +6,7 @@ function Tool3() {
   const [isLoading, setIsLoading] = useState(false);
   const [fetchError, setFetchError] = useState('');
   const [message, setMessage] = useState('');
+  const [renamingFileId, setRenamingFileId] = useState(null);
 
   const fetchConvertedFiles = useCallback(async () => {
     setIsLoading(true);
@@ -37,11 +38,46 @@ function Tool3() {
     fetchConvertedFiles();
   }, [fetchConvertedFiles]);
 
+  const handleSmartRename = async (fileId, originalName) => {
+    if (!window.confirm(`Are you sure you want to apply smart rename to "${originalName}"? This will remove timestamp/ID parts from the filename.`)) {
+      return;
+    }
+
+    setRenamingFileId(fileId);
+    setFetchError('');
+    setMessage('');
+
+    try {
+      const apiUrl = process.env.REACT_APP_API_URL || '';
+      const response = await fetch(`${apiUrl}/api/tool3/smart-rename/${fileId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setMessage(`File successfully renamed to: ${data.updatedFile.convertedFileName}`);
+        // Refresh the file list to show updated names
+        await fetchConvertedFiles();
+      } else {
+        setFetchError(data.error || 'Failed to rename file.');
+      }
+    } catch (err) {
+      console.error('Error renaming file:', err);
+      setFetchError('An error occurred while communicating with the server.');
+    } finally {
+      setRenamingFileId(null);
+    }
+  };
+
   return (
     <div className="tool-container tool3-manager">
       <h2>Tool 3: Manage Converted M4A Files</h2>
       <p className="tool-description">
-        View your successfully converted M4A files. Renaming functionality will be added later.
+        View and rename your successfully converted M4A files. Use "Smart Rename" to clean up filenames by removing timestamps and IDs.
       </p>
 
       <button onClick={fetchConvertedFiles} disabled={isLoading} className="refresh-button">
@@ -71,6 +107,14 @@ function Tool3() {
                   >
                     Download M4A
                   </a>
+                  <button
+                    onClick={() => handleSmartRename(file.id, file.convertedFileName)}
+                    className="rename-button"
+                    disabled={renamingFileId === file.id}
+                    title="Remove timestamp and ID parts from filename"
+                  >
+                    {renamingFileId === file.id ? 'Renaming...' : 'Smart Rename'}
+                  </button>
                 </div>
               </li>
             ))}

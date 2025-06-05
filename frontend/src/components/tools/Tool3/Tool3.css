@@ -10,7 +10,7 @@
   margin-bottom: 20px;
 }
 
-.tool3-manager .refresh-button { /* Can share with Tool2's refresh button if identical */
+.tool3-manager .refresh-button {
   padding: 10px 20px;
   font-size: 1rem;
   color: white;
@@ -53,11 +53,16 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 15px;
+  padding: 15px;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
   background-color: #f9f9f9;
+  transition: background-color 0.2s ease;
+}
+
+.file-item-converted:hover {
+  background-color: #f0f0f0;
 }
 
 .file-item-converted .file-info {
@@ -70,32 +75,34 @@
 .file-item-converted .original-name {
   font-size: 0.85rem;
   color: #777;
-  margin-bottom: 3px;
+  margin-bottom: 5px;
 }
 
 .file-item-converted .converted-name {
   font-weight: 500;
   color: #333;
   font-size: 1rem;
+  word-break: break-word;
 }
 
 .file-item-converted .file-actions {
   display: flex;
   align-items: center;
+  gap: 10px;
   white-space: nowrap;
 }
 
-.file-item-converted .download-link-item { /* Can share with Tool2's download link item */
+.file-item-converted .download-link-item {
   display: inline-block;
-  padding: 6px 12px;
+  padding: 8px 16px;
   background-color: #28a745;
   color: white;
   text-decoration: none;
-  border-radius: 4px;
+  border-radius: 6px;
   font-size: 0.9rem;
   font-weight: 500;
   transition: background-color 0.2s ease;
-  margin-right: 10px; /* Space before rename button */
+  text-align: center;
 }
 
 .file-item-converted .download-link-item:hover {
@@ -103,14 +110,15 @@
 }
 
 .file-item-converted .rename-button {
-  padding: 6px 12px;
+  padding: 8px 16px;
   font-size: 0.9rem;
   color: white;
-  background-color: #ffc107; /* Yellow for rename/edit */
+  background-color: #ffc107;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
   transition: background-color 0.2s ease;
+  font-weight: 500;
 }
 
 .file-item-converted .rename-button:hover:not(:disabled) {
@@ -123,8 +131,52 @@
   cursor: not-allowed;
 }
 
-/* Status messages (can also be shared from a common CSS or Tool1/Tool2.css) */
-.status-message { margin-top: 15px; padding: 10px; border-radius: 6px; font-size: 0.95rem; }
-.status-message.loading { background-color: #eaf2f8; color: #3498db; border: 1px solid #aed6f1; }
-.status-message.error { background-color: #fdecea; color: #c62828; border: 1px solid #ef9a9a; }
-.status-message.info { background-color: #e2e3e5; color: #383d41; border: 1px solid #d6d8db; }
+/* Status messages */
+.status-message { 
+  margin-top: 15px; 
+  padding: 12px; 
+  border-radius: 6px; 
+  font-size: 0.95rem; 
+}
+
+.status-message.loading { 
+  background-color: #eaf2f8; 
+  color: #3498db; 
+  border: 1px solid #aed6f1; 
+}
+
+.status-message.error { 
+  background-color: #fdecea; 
+  color: #c62828; 
+  border: 1px solid #ef9a9a; 
+}
+
+.status-message.info { 
+  background-color: #e8f5e9; 
+  color: #2e7d32; 
+  border: 1px solid #a5d6a7; 
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .file-item-converted {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .file-item-converted .file-info {
+    margin-right: 0;
+    margin-bottom: 10px;
+  }
+  
+  .file-item-converted .file-actions {
+    justify-content: space-between;
+    gap: 8px;
+  }
+  
+  .file-item-converted .download-link-item,
+  .file-item-converted .rename-button {
+    flex: 1;
+    text-align: center;
+  }
+}
